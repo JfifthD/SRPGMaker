@@ -33,6 +33,7 @@ export class PhaserRenderer implements IRenderer {
   private tileObjects: Phaser.GameObjects.GameObject[] = [];
   private rangeGraphics: Phaser.GameObjects.Graphics;
   private effectGraphics: Phaser.GameObjects.Graphics;
+  private dangerZoneGraphics: Phaser.GameObjects.Graphics;
   private unitSprites: Map<string, UnitSprite> = new Map();
 
   constructor(scene: Phaser.Scene) {
@@ -41,6 +42,7 @@ export class PhaserRenderer implements IRenderer {
     // Graphics layers (drawn in order)
     this.rangeGraphics  = scene.add.graphics().setDepth(99999);
     this.effectGraphics = scene.add.graphics().setDepth(99999);
+    this.dangerZoneGraphics = scene.add.graphics().setDepth(5); // Below units/highlights, above map
   }
 
   private getElev(x: number, y: number, state: BattleState): number {
@@ -250,6 +252,24 @@ export class PhaserRenderer implements IRenderer {
       // Stub
   }
 
+  renderDangerZone(tiles: Set<string>): void {
+    this.dangerZoneGraphics.clear();
+    const state = this.lastState;
+    for (const key of tiles) {
+      const parts = key.split(',');
+      const x = parseInt(parts[0] ?? '0', 10);
+      const y = parseInt(parts[1] ?? '0', 10);
+      const elev = state ? this.getElev(x, y, state) : 0;
+      const { sx, sy } = this.tileToScreen(x, y, elev);
+      this.dangerZoneGraphics.fillStyle(0xff2020, 0.18);
+      this.dangerZoneGraphics.fillRect(sx, sy, TILE_SIZE, TILE_SIZE);
+    }
+  }
+
+  clearDangerZone(): void {
+    this.dangerZoneGraphics.clear();
+  }
+
   update(time: number, delta: number): void {
     // Stub
   }
@@ -260,6 +280,7 @@ export class PhaserRenderer implements IRenderer {
 
     this.rangeGraphics.destroy();
     this.effectGraphics.destroy();
+    this.dangerZoneGraphics.destroy();
     for (const sprite of this.unitSprites.values()) {
         sprite.container.destroy();
     }

@@ -45,6 +45,13 @@ export interface IRenderer {
   /** Pan/zoom camera to center on a tile. */
   focusTile(pos: Pos): void;
 
+  // ── Danger Zone ────────────────────────────────
+  /** Render red overlay on danger zone tiles. */
+  renderDangerZone(tiles: Set<string>): void;
+
+  /** Clear danger zone overlay. */
+  clearDangerZone(): void;
+
   // ── Lifecycle ──────────────────────────────────
   /** Called every Phaser update tick (for animations that need per-frame updates). */
   update(time: number, delta: number): void;

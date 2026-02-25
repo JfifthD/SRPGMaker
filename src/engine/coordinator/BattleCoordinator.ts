@@ -15,6 +15,8 @@ import { DamageCalc } from '@/engine/systems/combat/DamageCalc';
 import { MathUtils } from '@/engine/utils/MathUtils';
 import type { SkillData } from '@/engine/data/types/Skill';
 import type { TerrainKey, TerrainData } from '@/engine/data/types/Terrain';
+import { buildDangerZone } from '@/engine/systems/movement/DangerZoneCalc';
+import type { BFSContext } from '@/engine/systems/movement/BFS';
 import terrainJson from '@/assets/data/terrains.json';
 import skillsJson from '@/assets/data/skills.json';
 
@@ -39,6 +41,7 @@ export class BattleCoordinator {
   private rangeTiles: Pos[] = [];
   private busy = false;
   private lastMoveAnimation: Promise<void> = Promise.resolve();
+  private dangerZoneVisible = false;
 
   constructor(renderer: IRenderer) {
     this.renderer = renderer;
@@ -487,6 +490,43 @@ export class BattleCoordinator {
     EventBus.emit('combatPreview', { preview: null });
     store.nextTurn();
     // onStateChange fires synchronously from nextTurn and handles runEnemyPhase.
+
+    // Refresh danger zone if visible (enemy positions changed)
+    if (this.dangerZoneVisible) {
+      this.refreshDangerZone();
+    }
+  }
+
+  toggleDangerZone(): void {
+    this.dangerZoneVisible = !this.dangerZoneVisible;
+    EventBus.emit('dangerZoneToggled', { visible: this.dangerZoneVisible });
+
+    if (this.dangerZoneVisible) {
+      this.refreshDangerZone();
+    } else {
+      this.renderer.clearDangerZone();
+    }
+  }
+
+  private refreshDangerZone(): void {
+    const state = store.getState();
+    const ctx = this.buildBFSContext(state);
+    const dangerTiles = buildDangerZone(state, ctx);
+    this.renderer.renderDangerZone(dangerTiles);
+  }
+
+  private buildBFSContext(state: BattleState): BFSContext {
+    return {
+      width: state.mapData.width,
+      height: state.mapData.height,
+      getTerrain(x: number, y: number) {
+        const key = state.mapData.terrain[y]?.[x] as TerrainKey ?? 'plain';
+        return TERRAIN_MAP[key] ?? TERRAIN_MAP['plain']!;
+      },
+      getUnit(x: number, y: number) {
+        return Object.values(state.units).find(u => u.hp > 0 && u.x === x && u.y === y);
+      },
+    };
   }
 
   private async runEnemyPhase(state: BattleState): Promise<void> {

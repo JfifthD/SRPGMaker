@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { BattleCoordinator } from '@/engine/coordinator/BattleCoordinator';
 import { TILE_SIZE, MAP_OFFSET_X, MAP_OFFSET_Y } from '@/config';
+import { EventBus } from '@/engine/utils/EventBus';
 
 export class InputHandler {
   private scene: Phaser.Scene;
@@ -38,6 +39,11 @@ export class InputHandler {
   private registerKeyboard(): void {
     this.scene.input.keyboard?.on('keydown-ESC', () => {
       this.coordinator.onCancel();
+    });
+
+    // D key: toggle danger zone heatmap
+    this.scene.input.keyboard?.on('keydown-D', () => {
+      this.coordinator.toggleDangerZone();
     });
   }
 
