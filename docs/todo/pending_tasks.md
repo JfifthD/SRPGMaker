@@ -21,10 +21,10 @@
 
 - [x] **턴 타임라인 베젤 (Action Order UI)**: ✅ 2026-02-26 구현 완료. `UIScripts` 상단 바 아래 CT 표시.
 - [x] **Action Menu 링 커맨드 (Phase 5.0)**: ✅ BattleCoordinator에서 넘겨받은 커맨드 Payload 기반 원형 UI(Ring) 렌더링 완료.
-- [ ] **AP 소모 시각화**: 타일 경로 마우스오버 시 소모될 AP를 타일에 표시 (깜빡임 처리).
-- [ ] **방향 지정 인터페이스**: 턴 종료(`End Turn`) 시 플레이어가 유닛 최종 facing(N/E/S/W)을 결정하는 Radial Menu 추가.
+- [x] **AP 소모 시각화**: 타일 경로 마우스오버 시 소모될 AP를 타일에 표시 (깜빡임 처리).
+- [x] **방향 지정 인터페이스**: 턴 종료(`End Turn`) 시 플레이어가 유닛 최종 facing(N/E/S/W)을 결정하는 Radial Menu 추가.
 - [ ] **미니맵**: 대형 전장의 카메라 뷰 및 유닛 위치 표시.
-- [ ] **위험 구역 표시 (Danger Zone Heatmap)**: 단축키 토글 시 적 전체의 이동+공격 합산 최대 사거리를 붉은색 타일레이어로 렌더링하는 전장 오버레이 시스템.
+- [x] **위험 구역 표시 (Danger Zone Heatmap)**: 단축키 토글 시 적 전체의 이동+공격 합산 최대 사거리를 붉은색 타일레이어로 렌더링하는 전장 오버레이 시스템.
 
 ---
 
@@ -36,7 +36,7 @@
 - [ ] **아이소메트릭 카메라**: Orthogonal → 쿼터뷰 전환, Screen↔ISO 레이캐스트 (`MathUtils`).
 - [ ] **Frustum Culling**: 화면 외 유닛 애니메이션 연산 일시 중지.
 - [ ] **고저차 대미지 기믹**: 높은 지형 원거리 유닛 → 사거리 연장 + 대미지 배율 (`DamageCalc.ts`).
-- [ ] **지형 상호작용 (Interactive Terrain)**: 전투 중 화염으로 숲 태우기, 스위치 조작, 벽돌 부수기 등 동적 맵 기믹 반영 객체 구현.
+- [x] **지형 상호작용 (Interactive Terrain)**: 전투 중 화염으로 숲 태우기, 스위치 조작, 벽돌 부수기 등 동적 맵 기믹 반영 객체 구현.
 
 ---
 
@@ -84,7 +84,7 @@
 
 ## Tech Debt / Infrastructure
 
-- [ ] **IRenderer 완전 분리**: BattleCoordinator가 IRenderer 인터페이스만 의존하도록. → `docs/todo/implement-irenderer.md`
+- [x] **IRenderer 완전 분리**: BattleCoordinator가 IRenderer 인터페이스만 의존하도록 렌더링 시스템 분리.
 - [ ] **Spatial Hash Grid**: 배열 검색을 2D 공간 분할표로 교체 (대형 맵 성능).
 - [ ] **테스트 커버리지 확대**: 현재 69.67% (`src/systems/**`). AStarWorker/PathfindingWorkerClient는 Node 환경 한계로 0% 유지.
 - [ ] **undo UI**: GameStore의 `stateHistory` 버퍼(50 entries)를 실제 Undo 버튼으로 연결.

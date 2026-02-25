@@ -8,6 +8,9 @@ import type { EffectNode } from './EffectNode';
 export type AffinityType = DamageType;
 export type TeamType = 'ally' | 'enemy';
 
+/** Behavioral archetype for enemy AI decision-making */
+export type AIType = 'aggressive' | 'defensive' | 'support';
+
 export interface UnitStats {
   hp: number;
   mp: number;
@@ -40,6 +43,8 @@ export interface UnitData {
   team: TeamType;
   /** Data-driven passive effects (ZOC, counter, chain-assist, etc.) */
   passiveEffects?: EffectNode[];
+  /** AI behavioral archetype — governs target priority and action selection */
+  aiType?: AIType;
 }
 
 /** Active buff/debuff on a unit */
@@ -101,6 +106,9 @@ export interface UnitInstance {
 
   // Level (for future growth system)
   level: number;
+
+  /** AI behavioral personality (enemies only) */
+  aiType: AIType;
 }
 
 /** Creates a UnitInstance from UnitData with a given spawn position */
@@ -139,6 +147,7 @@ export function createUnit(data: UnitData, x: number, y: number): UnitInstance {
     buffs: [],
     level: 1,
     passiveEffects: data.passiveEffects ? [...data.passiveEffects] : [],
+    aiType: data.aiType ?? 'aggressive',
   };
   
   if (data.trait) {
