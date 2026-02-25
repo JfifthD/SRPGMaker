@@ -2,7 +2,11 @@
 //  Terrain Types
 // ─────────────────────────────────────────────
 
-export type TerrainKey = 'plain' | 'forest' | 'mountain' | 'water' | 'wall' | 'ruins';
+import type { EffectNode } from './EffectNode';
+
+/** Built-in terrain keys. Games can define additional keys via string. */
+export type TerrainKey = 'plain' | 'forest' | 'mountain' | 'water' | 'wall' | 'ruins'
+  | 'burning_forest' | 'frozen_water' | (string & {});
 
 export interface TerrainData {
   key: TerrainKey;
@@ -17,4 +21,9 @@ export interface TerrainData {
   moveCost: number;
   /** Whether any unit can stand here */
   passable: boolean;
+  /** Semantic tags for this terrain (e.g. "Forest", "Water", "Fire") */
+  tags?: string[];
+  /** Reactive Effect Nodes — trigger on hit, entry, etc. */
+  reactions?: EffectNode[];
 }
+

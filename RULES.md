@@ -60,6 +60,15 @@ All implementations MUST prioritize the following architectural principles:
 
 ## Core Rules
 
+### SRPG Maker Engine Principles
+
+- **Effect Node System**: 모든 전술 기믹(ZOC, 반격, 협동 공격, 지형 상호작용 등)은 JSON `EffectNode[]` 배열로 정의. 엔진은 이를 인터프리트하는 런타임(`EffectNodeRunner`)만 제공. TypeScript에 전술 룰을 하드코딩 금지.
+- **Game-Creator Configurable**: 게임 제작자가 JSON 데이터(또는 추후 에디터)만으로 전투 규칙을 추가/제거/재조합 가능해야 함. 코드 변경 없이 새 게임 생성 가능.
+- **Terrain as Reactive Entity**: 지형은 단순 스탯 보너스 제공자가 아닌, `reactions[]`을 갖는 반응형 객체. 동적 지형 변환(예: 숲→불타는 숲)은 JSON으로 100% 정의.
+- **Script Escape Hatch**: JSON Node만으로 불가능한 복잡한 기믹은 `payload.script_id`로 TypeScript 함수를 바인딩하는 이스케이프 해치 제공.
+
+### Architecture Rules
+
 - **Immutability & Command Pattern**: All state changes via `GameAction.execute(state): BattleState`. Returns new state via `immer produce()`. No direct mutation.
 - **FSM (TurnManager)**: Strict `BattlePhase` transitions via `TRANSITIONS` map. Never set phase directly.
 - **Event Bus**: Logic emits events; renderers/UI/audio subscribe. Never call renderer from `src/systems/`.

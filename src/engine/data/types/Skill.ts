@@ -1,3 +1,5 @@
+import type { EffectNode } from './EffectNode';
+
 // ─────────────────────────────────────────────
 //  Skill Types
 // ─────────────────────────────────────────────
@@ -43,4 +45,6 @@ export interface SkillData {
   debuff?: SkillDebuff;
   desc: string;
   tags: string[];
+  /** Data-driven additional effects beyond simple damage/heal */
+  effectNodes?: EffectNode[];
 }

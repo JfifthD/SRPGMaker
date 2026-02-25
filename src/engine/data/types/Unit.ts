@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────
 
 import type { DamageType } from './Skill';
+import type { EffectNode } from './EffectNode';
 
 export type AffinityType = DamageType;
 export type TeamType = 'ally' | 'enemy';
@@ -37,6 +38,8 @@ export interface UnitData {
   /** Default attack range (tiles) */
   atkRange: number;
   team: TeamType;
+  /** Data-driven passive effects (ZOC, counter, chain-assist, etc.) */
+  passiveEffects?: EffectNode[];
 }
 
 /** Active buff/debuff on a unit */
@@ -59,6 +62,8 @@ export interface UnitInstance {
   atkRange: number;
   trait?: string;
   skills: string[];
+  /** Runtime passive effects from UnitData */
+  passiveEffects: EffectNode[];
 
   // Mutable stats
   hp: number;
@@ -130,6 +135,7 @@ export function createUnit(data: UnitData, x: number, y: number): UnitInstance {
 
     buffs: [],
     level: 1,
+    passiveEffects: data.passiveEffects ? [...data.passiveEffects] : [],
   };
   
   if (data.trait) {

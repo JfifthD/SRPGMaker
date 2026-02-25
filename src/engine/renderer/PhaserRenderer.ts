@@ -11,7 +11,7 @@ const TERRAIN_MAP: Record<string, TerrainData> = Object.fromEntries(
   (terrainJson as TerrainData[]).map(t => [t.key, t]),
 );
 
-const COL = {
+const COL: Record<string, number> = {
   moveRange:  0x2e7a2e,
   atkRange:   0x7a2020,
   skillRange: 0x4a2080,
@@ -22,6 +22,8 @@ const COL = {
   water:      0x0a1520,
   wall:       0x2a2220,
   ruins:      0x1e1a14,
+  burning_forest: 0x3a1a0a,
+  frozen_water:   0x0a2030,
 };
 
 export class PhaserRenderer implements IRenderer {
@@ -114,10 +116,10 @@ export class PhaserRenderer implements IRenderer {
   highlightTiles(tiles: Pos[], mode: HighlightMode): void {
     const g = this.rangeGraphics;
     
-    let color = COL.selected;
-    if (mode === 'move') color = COL.moveRange;
-    if (mode === 'attack') color = COL.atkRange;
-    if (mode === 'skill') color = COL.skillRange;
+    let color = COL.selected ?? 0xc9a84c;
+    if (mode === 'move') color = COL.moveRange ?? 0x2e7a2e;
+    if (mode === 'attack') color = COL.atkRange ?? 0x7a2020;
+    if (mode === 'skill') color = COL.skillRange ?? 0x4a2080;
 
     g.clear();
     for (const tile of tiles) {

@@ -49,6 +49,12 @@ export interface GameEventMap {
   // UI
   logMessage:    { text: string; cls: string };
   cancelAction:  Record<string, never>;
+
+  // Terrain
+  terrainChanged:    { x: number; y: number; from: string; to: string };
+
+  // Danger Zone
+  dangerZoneToggled: { visible: boolean };
 }
 
 type Listener<T> = (payload: T) => void;
