@@ -91,8 +91,8 @@ describe('EffectNodeRunner', () => {
       const results = evaluate(nodes, 'OnAfterDamaged', ctx, state);
 
       expect(results).toHaveLength(1);
-      expect(results[0].node.name).toBe('Counter');
-      expect(results[0].targets).toEqual(['u2']);
+      expect(results[0]!.node.name).toBe('Counter');
+      expect(results[0]!.targets).toEqual(['u2']);
     });
 
     it('should filter by conditions', () => {
@@ -124,7 +124,7 @@ describe('EffectNodeRunner', () => {
 
       const results = evaluate(nodes, 'OnMoveLeave', ctx, state);
       expect(results).toHaveLength(1);
-      expect(results[0].interruptMovement).toBe(true);
+      expect(results[0]!.interruptMovement).toBe(true);
     });
 
     it('should fail conditions when IsEnemy check fails (same team)', () => {
@@ -178,9 +178,9 @@ describe('EffectNodeRunner', () => {
 
       const results = evaluate(nodes, 'OnTurnStart', ctx, state);
       expect(results).toHaveLength(1);
-      expect(results[0].targets).toContain('near');
-      expect(results[0].targets).not.toContain('far');
-      expect(results[0].targets).not.toContain('healer'); // Self excluded
+      expect(results[0]!.targets).toContain('near');
+      expect(results[0]!.targets).not.toContain('far');
+      expect(results[0]!.targets).not.toContain('healer'); // Self excluded
     });
 
     it('should respect priority ordering', () => {
@@ -214,8 +214,8 @@ describe('EffectNodeRunner', () => {
       const results = evaluate(nodes, 'OnAfterDamaged', ctx, state);
 
       expect(results).toHaveLength(2);
-      expect(results[0].node.name).toBe('HighPriority');
-      expect(results[1].node.name).toBe('LowPriority');
+      expect(results[0]!.node.name).toBe('HighPriority');
+      expect(results[1]!.node.name).toBe('LowPriority');
     });
 
     it('should evaluate HasTag condition', () => {
@@ -241,8 +241,8 @@ describe('EffectNodeRunner', () => {
       const results = evaluate(nodes, 'OnHitByTag', ctx, state);
 
       expect(results).toHaveLength(1);
-      expect(results[0].payload.transformTerrainTo).toBe('burning_forest');
-      expect(results[0].targets).toEqual(['3,3']);
+      expect(results[0]!.payload.transformTerrainTo).toBe('burning_forest');
+      expect(results[0]!.targets).toEqual(['3,3']);
     });
 
     it('should fail HasTag when tag is not present', () => {
@@ -317,7 +317,7 @@ describe('EffectNodeRunner', () => {
 
       const results = evaluate(nodes, 'OnAllyAttacking', ctx, state);
       expect(results).toHaveLength(1);
-      expect(results[0].targets).toEqual(['enemy']);
+      expect(results[0]!.targets).toEqual(['enemy']);
     });
 
     it('should fail when target is out of weapon range', () => {

@@ -49,6 +49,8 @@ export interface ActiveBuff {
   dur: number;
 }
 
+export type Facing = 'N' | 'E' | 'S' | 'W';
+
 /** Runtime instance of a unit — state that can change */
 export interface UnitInstance {
   readonly dataId: string;
@@ -78,7 +80,8 @@ export interface UnitInstance {
   // Position
   x: number;
   y: number;
-  facing: 'N' | 'E' | 'S' | 'W';
+  /** Direction the unit is facing */
+  facing: Facing;
 
   // AP & CT System
   currentAP: number;

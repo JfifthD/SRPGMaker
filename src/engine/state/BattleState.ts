@@ -40,7 +40,7 @@ export interface BattleState {
   readonly stateHistory: BattleState[];
 }
 
-export type InputMode = 'idle' | 'move' | 'skill' | 'attack';
+export type InputMode = 'idle' | 'move' | 'skill' | 'attack' | 'facing';
 
 /** Utility helpers for querying BattleState */
 export const StateQuery = {

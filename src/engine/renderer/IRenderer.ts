@@ -22,6 +22,19 @@ export interface IRenderer {
   /** Clear all tile highlights. */
   clearHighlights(): void;
 
+  // ── AP & Facing UI ─────────────────────────────
+  /** Show the AP cost of moving to a specific hovered tile. */
+  showAPPreview(x: number, y: number, cost: number): void;
+
+  /** Hide the AP cost preview. */
+  hideAPPreview(): void;
+
+  /** Show directional selection arrows around a unit (N, E, S, W). */
+  showFacingSelection(unitX: number, unitY: number): void;
+
+  /** Hide directional selection arrows. */
+  hideFacingSelection(): void;
+
   // ── Animations (all return Promise so coordinator can await) ──
   /** Animate a unit moving along a path. Path excludes the start tile. */
   animateMove(unitId: string, path: Pos[]): Promise<void>;

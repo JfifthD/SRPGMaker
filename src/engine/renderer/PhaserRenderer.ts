@@ -34,6 +34,11 @@ export class PhaserRenderer implements IRenderer {
   private rangeGraphics: Phaser.GameObjects.Graphics;
   private effectGraphics: Phaser.GameObjects.Graphics;
   private dangerZoneGraphics: Phaser.GameObjects.Graphics;
+  
+  // UI Overlays
+  private apPreviewText: Phaser.GameObjects.Text;
+  private facingGraphics: Phaser.GameObjects.Graphics;
+
   private unitSprites: Map<string, UnitSprite> = new Map();
 
   constructor(scene: Phaser.Scene) {
@@ -43,6 +48,15 @@ export class PhaserRenderer implements IRenderer {
     this.rangeGraphics  = scene.add.graphics().setDepth(99999);
     this.effectGraphics = scene.add.graphics().setDepth(99999);
     this.dangerZoneGraphics = scene.add.graphics().setDepth(50000); // Above map tiles (0-1000), below highlights (99999)
+    
+    this.facingGraphics = scene.add.graphics().setDepth(100000); // Topmost
+    this.apPreviewText = scene.add.text(0, 0, '', {
+      fontSize: '12px',
+      fontFamily: 'monospace',
+      color: '#ffffff',
+      backgroundColor: '#000000aa',
+      padding: { x: 4, y: 2 }
+    }).setOrigin(0.5, 1).setDepth(100001).setVisible(false);
   }
 
   private getElev(x: number, y: number, state: BattleState): number {
@@ -139,6 +153,61 @@ export class PhaserRenderer implements IRenderer {
 
   clearHighlights(): void {
     this.rangeGraphics.clear();
+  }
+
+  // ── AP & Facing UI ─────────────────────────────
+  
+  showAPPreview(x: number, y: number, cost: number): void {
+    const elev = this.lastState ? this.getElev(x, y, this.lastState) : 0;
+    const { sx, sy } = this.tileToScreen(x, y, elev);
+    
+    this.apPreviewText.setText(`-${cost} AP`);
+    // Position text above the tile center
+    this.apPreviewText.setPosition(sx + TILE_SIZE / 2, sy);
+    this.apPreviewText.setVisible(true);
+  }
+
+  hideAPPreview(): void {
+    this.apPreviewText.setVisible(false);
+  }
+
+  showFacingSelection(unitX: number, unitY: number): void {
+    const g = this.facingGraphics;
+    g.clear();
+    const elev = this.lastState ? this.getElev(unitX, unitY, this.lastState) : 0;
+    const { sx, sy } = this.tileToScreen(unitX, unitY, elev);
+    
+    const cx = sx + TILE_SIZE / 2;
+    const cy = sy + TILE_SIZE / 2;
+    const offset = TILE_SIZE * 0.8;
+    
+    g.lineStyle(3, 0xffff00, 1.0);
+    g.fillStyle(0xffff00, 0.4);
+    
+    // Helper to draw a small triangle arrow
+    const drawArrow = (x: number, y: number, angle: number) => {
+      g.save();
+      g.translateCanvas(x, y);
+      g.rotateCanvas(angle);
+      g.beginPath();
+      g.moveTo(0, -10);
+      g.lineTo(8, 6);
+      g.lineTo(-8, 6);
+      g.closePath();
+      g.fillPath();
+      g.strokePath();
+      g.restore();
+    };
+
+    // N (up), E (right), S (down), W (left)
+    drawArrow(cx, cy - offset, 0);                 // N
+    drawArrow(cx + offset, cy, Math.PI / 2);       // E
+    drawArrow(cx, cy + offset, Math.PI);           // S
+    drawArrow(cx - offset, cy, -Math.PI / 2);      // W
+  }
+
+  hideFacingSelection(): void {
+    this.facingGraphics.clear();
   }
 
   async animateMove(unitId: string, path: Pos[]): Promise<void> {

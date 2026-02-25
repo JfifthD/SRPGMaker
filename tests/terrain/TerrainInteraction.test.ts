@@ -96,12 +96,12 @@ describe('TerrainInteractionSystem', () => {
   describe('onSkillHitTile', () => {
     it('should transform forest to burning_forest when hit by Fire skill', () => {
       const terrain = Array.from({ length: 8 }, () => Array(8).fill('plain'));
-      terrain[3][3] = 'forest';
+      terrain[3]![3] = 'forest';
       const state = makeState([makeUnit({})], terrain);
 
       const newState = onSkillHitTile(state, 3, 3, ['Fire'], 'u1');
 
-      expect(newState.mapData.terrain[3][3]).toBe('burning_forest');
+      expect(newState.mapData.terrain[3]![3]).toBe('burning_forest');
       expect(newState).not.toBe(state); // Immutability: new state object
     });
 
@@ -110,7 +110,7 @@ describe('TerrainInteractionSystem', () => {
       EventBus.on('terrainChanged', (e: any) => events.push(e));
 
       const terrain = Array.from({ length: 8 }, () => Array(8).fill('plain'));
-      terrain[2][4] = 'forest';
+      terrain[2]![4] = 'forest';
       const state = makeState([], terrain);
 
       onSkillHitTile(state, 4, 2, ['Fire'], 'u1');
@@ -121,12 +121,12 @@ describe('TerrainInteractionSystem', () => {
 
     it('should NOT transform when skill tags do not match', () => {
       const terrain = Array.from({ length: 8 }, () => Array(8).fill('plain'));
-      terrain[3][3] = 'forest';
+      terrain[3]![3] = 'forest';
       const state = makeState([], terrain);
 
       const newState = onSkillHitTile(state, 3, 3, ['Ice'], 'u1');
 
-      expect(newState.mapData.terrain[3][3]).toBe('forest'); // Unchanged
+      expect(newState.mapData.terrain[3]![3]).toBe('forest'); // Unchanged
       expect(newState).toBe(state); // Same reference (no mutation needed)
     });
 
@@ -164,13 +164,13 @@ describe('TerrainInteractionSystem', () => {
       initTerrainRegistry([plainTerrain, forestTerrain, hazardTerrain]);
 
       const terrain = Array.from({ length: 8 }, () => Array(8).fill('plain'));
-      terrain[3][3] = 'burning_forest';
+      terrain[3]![3] = 'burning_forest';
       const state = makeState([makeUnit({})], terrain);
 
       const results = onUnitEnterTile(state, 'u1', 3, 3);
       expect(results).toHaveLength(1);
-      expect(results[0].node.name).toBe('BurnDamage');
-      expect(results[0].targets).toEqual(['u1']);
+      expect(results[0]!.node.name).toBe('BurnDamage');
+      expect(results[0]!.targets).toEqual(['u1']);
     });
   });
 });

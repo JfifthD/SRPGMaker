@@ -5,6 +5,7 @@ import { RangeCalc } from '@/engine/systems/movement/RangeCalc';
 import { EnemyAI } from '@/engine/systems/ai/EnemyAI';
 import { StateQuery } from '@/engine/state/BattleState';
 import { MoveAction } from '@/engine/state/actions/MoveAction';
+import { FacingAction } from '@/engine/state/actions/FacingAction';
 import { AttackAction } from '@/engine/state/actions/AttackAction';
 import { WaitAction } from '@/engine/state/actions/WaitAction';
 import { SkillAction } from '@/engine/state/actions/SkillAction';
@@ -172,6 +173,9 @@ export class BattleCoordinator {
         break;
       case 'skill':
         this.handleSkillTargetClick(tx, ty, state);
+        break;
+      case 'facing':
+        this.handleFacingClick(tx, ty, state);
         break;
     }
   }
@@ -391,6 +395,28 @@ export class BattleCoordinator {
     this.doSkill(state.selectedUnitId, state.activeSkillId, tx, ty, state);
   }
 
+  private handleFacingClick(tx: number, ty: number, state: BattleState): void {
+    const unit = state.selectedUnitId ? StateQuery.unit(state, state.selectedUnitId) : null;
+    if (!unit) return;
+
+    // Determine facing direction based on click relative to unit
+    const dx = tx - unit.x;
+    const dy = ty - unit.y;
+
+    let newFacing = unit.facing;
+    if (dx === 0 && dy === -1) newFacing = 'N';
+    else if (dx === 1 && dy === 0) newFacing = 'E';
+    else if (dx === 0 && dy === 1) newFacing = 'S';
+    else if (dx === -1 && dy === 0) newFacing = 'W';
+    // If clicked exactly on the unit or far away, keep current facing
+    
+    store.dispatch(new FacingAction(unit.instanceId, newFacing));
+    
+    this.renderer.hideFacingSelection();
+    // After facing is chosen, the turn truly ends
+    this.endTurn();
+  }
+
   private async doSkill(casterId: string, skillId: string, tx: number, ty: number, state: BattleState): Promise<void> {
     const caster = StateQuery.unit(state, casterId);
     const sk = ALL_SKILLS[skillId];
@@ -474,8 +500,21 @@ export class BattleCoordinator {
   waitAction(): void {
     const state = store.getState();
     if (!state.selectedUnitId) return;
+    
     store.dispatch(new WaitAction(state.selectedUnitId));
-    this.onCancel();
+    
+    // Instead of ending turn immediately, enter facing selection mode
+    store.dispatchAsync(null, draft => {
+      draft.inputMode = 'facing';
+    });
+    
+    EventBus.emit('closeRingMenu', {});
+    this.renderer.clearHighlights();
+    
+    const unit = StateQuery.unit(store.getState(), state.selectedUnitId);
+    if (unit) {
+      this.renderer.showFacingSelection(unit.x, unit.y);
+    }
   }
 
   async endTurn(): Promise<void> {
@@ -512,7 +551,8 @@ export class BattleCoordinator {
     const state = store.getState();
     const ctx = this.buildBFSContext(state);
     const dangerTiles = buildDangerZone(state, ctx);
-    console.log(`[DangerZone] Computed ${dangerTiles.size} tiles from ${Object.values(state.units).filter(u => u.hp > 0 && u.team === 'enemy').length} enemies`);
+    const numEnemies = Object.values(state.units).filter(u => u.hp > 0 && u.team === 'enemy').length;
+    console.log('[DangerZone] Computed ' + dangerTiles.size + ' tiles from ' + numEnemies + ' enemies');
     this.renderer.renderDangerZone(dangerTiles);
   }
 

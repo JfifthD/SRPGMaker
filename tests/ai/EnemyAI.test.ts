@@ -41,7 +41,7 @@ function makeUnit(overrides: Partial<UnitInstance> = {}): UnitInstance {
     currentAP: 3, maxAP: 5, ct: 0,
     moved: false, acted: false,
     buffs: [], level: 1,
-    skills: [],
+    skills: [], passiveEffects: [],
     ...overrides,
   };
 }
