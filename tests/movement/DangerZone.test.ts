@@ -26,7 +26,7 @@ function makeUnit(overrides: Partial<UnitInstance>): UnitInstance {
     atk: 20, def: 10, spd: 10, skl: 5,
     x: 0, y: 0, facing: 'S',
     currentAP: 3, maxAP: 5, ct: 0,
-    moved: false, acted: false, buffs: [], level: 1,
+    moved: false, acted: false, buffs: [], level: 1, aiType: 'aggressive',
     ...overrides,
   };
 }

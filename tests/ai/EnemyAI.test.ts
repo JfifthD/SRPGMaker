@@ -42,6 +42,7 @@ function makeUnit(overrides: Partial<UnitInstance> = {}): UnitInstance {
     moved: false, acted: false,
     buffs: [], level: 1,
     skills: [], passiveEffects: [],
+    aiType: 'aggressive', // default personality
     ...overrides,
   };
 }
@@ -77,8 +78,9 @@ describe('EnemyAI.pickTarget', () => {
     const enemy = makeUnit({ instanceId: 'e', team: 'enemy', x: 0, y: 0, atkRange: 1 });
     const near  = makeUnit({ instanceId: 'near', team: 'ally', x: 3, y: 0 });
     const far   = makeUnit({ instanceId: 'far',  team: 'ally', x: 8, y: 0 });
+    const state = makeState([enemy, near, far]);
 
-    const target = EnemyAI.pickTarget(enemy, [near, far]);
+    const target = EnemyAI.pickTarget(enemy, [near, far], state);
     expect(target.instanceId).toBe('near');
   });
 
@@ -86,17 +88,39 @@ describe('EnemyAI.pickTarget', () => {
     const enemy  = makeUnit({ instanceId: 'e', team: 'enemy', x: 0, y: 0, atkRange: 3 });
     const weakly = makeUnit({ instanceId: 'weak', team: 'ally', x: 1, y: 0, hp: 10 });
     const sturdy = makeUnit({ instanceId: 'sturdy', team: 'ally', x: 2, y: 0, hp: 40 });
+    const state  = makeState([enemy, weakly, sturdy]);
 
-    const target = EnemyAI.pickTarget(enemy, [sturdy, weakly]);
+    const target = EnemyAI.pickTarget(enemy, [sturdy, weakly], state);
     expect(target.instanceId).toBe('weak');
   });
 
   it('picks the only ally available', () => {
     const enemy = makeUnit({ instanceId: 'e', team: 'enemy', x: 5, y: 5, atkRange: 1 });
     const ally  = makeUnit({ instanceId: 'a', team: 'ally', x: 9, y: 9 });
+    const state = makeState([enemy, ally]);
 
-    const target = EnemyAI.pickTarget(enemy, [ally]);
+    const target = EnemyAI.pickTarget(enemy, [ally], state);
     expect(target.instanceId).toBe('a');
+  });
+
+  it('[defensive] picks the highest ATK ally', () => {
+    const enemy  = makeUnit({ instanceId: 'e', team: 'enemy', x: 0, y: 0, atkRange: 5, aiType: 'defensive' });
+    const weakAtk  = makeUnit({ instanceId: 'w', team: 'ally', x: 1, y: 0, atk: 5  });
+    const strongAtk = makeUnit({ instanceId: 's', team: 'ally', x: 2, y: 0, atk: 40 });
+    const state     = makeState([enemy, weakAtk, strongAtk]);
+
+    const target = EnemyAI.pickTarget(enemy, [weakAtk, strongAtk], state);
+    expect(target.instanceId).toBe('s'); // targets the bigger threat
+  });
+
+  it('[support] picks the nearest ally', () => {
+    const enemy = makeUnit({ instanceId: 'e', team: 'enemy', x: 0, y: 0, atkRange: 1, aiType: 'support' });
+    const near  = makeUnit({ instanceId: 'near', team: 'ally', x: 2, y: 0 });
+    const far   = makeUnit({ instanceId: 'far',  team: 'ally', x: 9, y: 0 });
+    const state = makeState([enemy, near, far]);
+
+    const target = EnemyAI.pickTarget(enemy, [near, far], state);
+    expect(target.instanceId).toBe('near');
   });
 });
 
@@ -266,5 +290,67 @@ describe('EnemyAI.chooseBestMove', () => {
     // Best reachable tile should be x=2 (closest to target at x=5)
     expect(move).not.toBeNull();
     expect(move?.constructor.name).toBe('MoveAction');
+  });
+});
+
+// ── AI Personality: decide() ───────────────────────────────────────
+
+describe('EnemyAI personality — decide()', () => {
+  it('[aggressive] attacks the lowest HP ally in range (original behavior)', async () => {
+    const enemy = makeUnit({
+      instanceId: 'e', team: 'enemy', x: 0, y: 0, atkRange: 3, skills: [], mp: 0,
+      aiType: 'aggressive',
+    });
+    const weakAlly   = makeUnit({ instanceId: 'weak', team: 'ally', x: 1, y: 0, hp: 5  });
+    const strongAlly = makeUnit({ instanceId: 'str',  team: 'ally', x: 2, y: 0, hp: 50 });
+    const state = makeState([enemy, weakAlly, strongAlly]);
+
+    const actions = await EnemyAI.decide(enemy, state);
+
+    // Should end with an AttackAction (aggressive units attack rather than wait)
+    const hasAttack = actions.some(a => a.constructor.name === 'AttackAction');
+    const hasWait   = actions.some(a => a.constructor.name === 'WaitAction');
+    expect(hasAttack).toBe(true);
+    expect(hasWait).toBe(false);
+  });
+
+  it('[defensive] retreats when HP is below 50%', async () => {
+    // Pathworker returns tiles further away from the ally
+    vi.mocked(Pathworker.getPath).mockResolvedValue(null);
+    vi.mocked(Pathworker.getReachable).mockResolvedValue([
+      { x: 0, y: 0, cost: 0 },
+      { x: 0, y: 1, cost: 1 }, // farther from ally at (1,0)
+    ]);
+
+    const enemy = makeUnit({
+      instanceId: 'e', team: 'enemy', x: 0, y: 0, atkRange: 1, skills: [], mp: 0,
+      hp: 20, maxHp: 65,   // 30% HP → below defensive retreat threshold of 50%
+      aiType: 'defensive',
+    });
+    const ally = makeUnit({ instanceId: 'a', team: 'ally', x: 1, y: 0, atk: 25 });
+    const state = makeState([enemy, ally]);
+
+    const actions = await EnemyAI.decide(enemy, state);
+
+    // Should have a MoveAction (retreating), NOT an AttackAction
+    const hasMove   = actions.some(a => a.constructor.name === 'MoveAction');
+    const hasAttack = actions.some(a => a.constructor.name === 'AttackAction');
+    expect(hasMove).toBe(true);
+    expect(hasAttack).toBe(false);
+  });
+
+  it('[support] returns WaitAction when no skill targets are in range and cannot attack', async () => {
+    vi.mocked(Pathworker.getPath).mockResolvedValue(null);
+    vi.mocked(Pathworker.getReachable).mockResolvedValue([]);
+
+    const necro = makeUnit({
+      instanceId: 'necro', team: 'enemy', x: 5, y: 5, atkRange: 1,
+      skills: [], mp: 0, aiType: 'support',
+    });
+    const ally = makeUnit({ instanceId: 'a', team: 'ally', x: 0, y: 0 }); // far away
+    const state = makeState([necro, ally]);
+
+    const actions = await EnemyAI.decide(necro, state);
+    expect(actions[0]?.constructor.name).toBe('WaitAction');
   });
 });

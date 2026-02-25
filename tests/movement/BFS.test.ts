@@ -30,7 +30,7 @@ function makeUnit(x: number, y: number, spd: number, team: 'ally' | 'enemy' = 'a
     currentAP: spd, maxAP: 5, ct: 0,
     moved: false, acted: false,
     buffs: [], level: 1,
-    skills: [], passiveEffects: [],
+    skills: [], passiveEffects: [], aiType: 'aggressive',
   };
 }
 
