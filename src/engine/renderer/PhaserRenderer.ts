@@ -42,7 +42,7 @@ export class PhaserRenderer implements IRenderer {
     // Graphics layers (drawn in order)
     this.rangeGraphics  = scene.add.graphics().setDepth(99999);
     this.effectGraphics = scene.add.graphics().setDepth(99999);
-    this.dangerZoneGraphics = scene.add.graphics().setDepth(5); // Below units/highlights, above map
+    this.dangerZoneGraphics = scene.add.graphics().setDepth(50000); // Above map tiles (0-1000), below highlights (99999)
   }
 
   private getElev(x: number, y: number, state: BattleState): number {
@@ -261,7 +261,7 @@ export class PhaserRenderer implements IRenderer {
       const y = parseInt(parts[1] ?? '0', 10);
       const elev = state ? this.getElev(x, y, state) : 0;
       const { sx, sy } = this.tileToScreen(x, y, elev);
-      this.dangerZoneGraphics.fillStyle(0xff2020, 0.18);
+      this.dangerZoneGraphics.fillStyle(0xff2020, 0.28);
       this.dangerZoneGraphics.fillRect(sx, sy, TILE_SIZE, TILE_SIZE);
     }
   }

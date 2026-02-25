@@ -512,6 +512,7 @@ export class BattleCoordinator {
     const state = store.getState();
     const ctx = this.buildBFSContext(state);
     const dangerTiles = buildDangerZone(state, ctx);
+    console.log(`[DangerZone] Computed ${dangerTiles.size} tiles from ${Object.values(state.units).filter(u => u.hp > 0 && u.team === 'enemy').length} enemies`);
     this.renderer.renderDangerZone(dangerTiles);
   }
 

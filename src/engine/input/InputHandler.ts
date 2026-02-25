@@ -37,12 +37,18 @@ export class InputHandler {
   }
 
   private registerKeyboard(): void {
-    this.scene.input.keyboard?.on('keydown-ESC', () => {
+    const kb = this.scene.input.keyboard;
+    if (!kb) return;
+
+    // ESC: cancel
+    kb.on('keydown-ESC', () => {
       this.coordinator.onCancel();
     });
 
     // D key: toggle danger zone heatmap
-    this.scene.input.keyboard?.on('keydown-D', () => {
+    const keyD = kb.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+    keyD.on('down', () => {
+      console.log('[InputHandler] D key pressed → toggleDangerZone');
       this.coordinator.toggleDangerZone();
     });
   }

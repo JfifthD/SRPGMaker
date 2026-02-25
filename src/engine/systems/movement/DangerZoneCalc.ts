@@ -11,14 +11,16 @@ import { BFS } from './BFS';
 /**
  * Build a set of "x,y" tile keys representing all tiles
  * that at least one enemy can reach AND attack from.
+ * Uses maxAP (not currentAP) to show the worst-case threat range.
  */
 export function buildDangerZone(state: BattleState, ctx: BFSContext): Set<string> {
   const dangerTiles = new Set<string>();
   const enemies = Object.values(state.units).filter(u => u.hp > 0 && u.team === 'enemy');
 
   for (const enemy of enemies) {
-    // Get all tiles this enemy can move to
-    const reachable = BFS.reachable(enemy, ctx);
+    // Use maxAP (full potential) instead of currentAP for threat calculation
+    const shadow = { ...enemy, currentAP: enemy.maxAP };
+    const reachable = BFS.reachable(shadow, ctx);
 
     for (const tile of reachable) {
       // From each reachable tile, compute the attack range (Manhattan distance)
@@ -38,3 +40,4 @@ export function buildDangerZone(state: BattleState, ctx: BFSContext): Set<string
 
   return dangerTiles;
 }
+

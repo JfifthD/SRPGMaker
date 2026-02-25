@@ -85,14 +85,14 @@ describe('DangerZoneCalc', () => {
   });
 
   it('should compute danger zone for a single stationary enemy', () => {
-    // Enemy at (0,0) with AP=0 (can't move), atkRange=1
-    // Should only threaten adjacent tiles
-    const enemy = makeUnit({ instanceId: 'e1', team: 'enemy', x: 0, y: 0, currentAP: 0, atkRange: 1 });
+    // Enemy at (0,0) with maxAP=0 (can't move), atkRange=1
+    // Should only threaten adjacent tiles from current position
+    const enemy = makeUnit({ instanceId: 'e1', team: 'enemy', x: 0, y: 0, currentAP: 0, maxAP: 0, atkRange: 1 });
     const state = makeState([enemy]);
     const ctx = makeCtx(8, 8, [enemy]);
     const zone = buildDangerZone(state, ctx);
 
-    // With AP=0, enemy can only be at (0,0). Attack range 1 reaches (1,0), (0,1)
+    // With maxAP=0, enemy can only be at (0,0). Attack range 1 reaches (1,0), (0,1)
     expect(zone.has('0,0')).toBe(true);
     expect(zone.has('1,0')).toBe(true);
     expect(zone.has('0,1')).toBe(true);
@@ -101,24 +101,23 @@ describe('DangerZoneCalc', () => {
   });
 
   it('should compute danger zone for enemy with movement + attack range', () => {
-    // Enemy at (3,3) with AP=2, atkRange=1
-    const enemy = makeUnit({ instanceId: 'e1', team: 'enemy', x: 3, y: 3, currentAP: 2, atkRange: 1 });
+    // Enemy at (3,3) with maxAP=3, atkRange=1 → max threat range = 4 tiles from center
+    const enemy = makeUnit({ instanceId: 'e1', team: 'enemy', x: 3, y: 3, currentAP: 2, maxAP: 3, atkRange: 1 });
     const state = makeState([enemy]);
     const ctx = makeCtx(8, 8, [enemy]);
     const zone = buildDangerZone(state, ctx);
 
     // Center tile should be in zone
     expect(zone.has('3,3')).toBe(true);
-    // 2 move + 1 attack = 3 tiles from center
-    expect(zone.has('6,3')).toBe(true);  // 3 right
-    expect(zone.has('0,3')).toBe(true);  // 3 left
-    // 4 tiles away should not be in zone
-    expect(zone.has('7,3')).toBe(false);
+    // 3 move + 1 attack = 4 tiles from center
+    expect(zone.has('7,3')).toBe(true);  // 4 right
+    expect(zone.has('3,7')).toBe(true);  // 4 down
   });
 
   it('should merge danger zones from multiple enemies', () => {
-    const e1 = makeUnit({ instanceId: 'e1', team: 'enemy', x: 0, y: 0, currentAP: 1, atkRange: 1 });
-    const e2 = makeUnit({ instanceId: 'e2', team: 'enemy', x: 7, y: 7, currentAP: 1, atkRange: 1 });
+    // maxAP=2 → can move 2, atkRange=1 → threat 3 tiles from start
+    const e1 = makeUnit({ instanceId: 'e1', team: 'enemy', x: 0, y: 0, currentAP: 1, maxAP: 2, atkRange: 1 });
+    const e2 = makeUnit({ instanceId: 'e2', team: 'enemy', x: 7, y: 7, currentAP: 1, maxAP: 2, atkRange: 1 });
     const state = makeState([e1, e2]);
     const ctx = makeCtx(8, 8, [e1, e2]);
     const zone = buildDangerZone(state, ctx);
@@ -126,8 +125,8 @@ describe('DangerZoneCalc', () => {
     // Both corners should be dangerous
     expect(zone.has('0,0')).toBe(true);
     expect(zone.has('7,7')).toBe(true);
-    // Center should NOT be dangerous (enemies are too far apart)
-    expect(zone.has('3,3')).toBe(false);
+    // Center should NOT be dangerous (2 move + 1 attack = 3 tiles from corners)
+    expect(zone.has('4,4')).toBe(false);
   });
 
   it('should ignore dead enemies', () => {
