@@ -1,0 +1,22 @@
+{
+  "id": "chronicle-of-shadows",
+  "name": "The Chronicle of Shadows",
+  "version": "0.1.0",
+  "engineVersion": ">=0.1.0",
+  "entryMap": "stage_01",
+  "data": {
+    "units": "data/units.json",
+    "skills": "data/skills.json",
+    "terrains": "data/terrains.json",
+    "mapsDir": "data/maps/"
+  },
+  "assets": {
+    "imagesDir": "assets/images/",
+    "audioDir": "assets/audio/"
+  },
+  "meta": {
+    "author": "SRPGMaker Sample",
+    "description": "A tactical RPG set in the kingdom of Aldora, facing the return of shadow forces.",
+    "thumbnail": "assets/images/thumbnail.png"
+  }
+}

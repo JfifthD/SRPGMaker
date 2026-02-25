@@ -1,0 +1,45 @@
+// ─────────────────────────────────────────────
+//  Boot Scene — asset preloading
+// ─────────────────────────────────────────────
+
+import Phaser from 'phaser';
+
+export class BootScene extends Phaser.Scene {
+  constructor() {
+    super({ key: 'BootScene' });
+  }
+
+  preload(): void {
+    // ── Progress bar ──
+    const bar = this.add.graphics();
+    const w = this.scale.width;
+    const h = this.scale.height;
+
+    this.load.on('progress', (v: number) => {
+      bar.clear();
+      bar.fillStyle(0x1a2233, 1);
+      bar.fillRect(w * 0.1, h * 0.5 - 12, w * 0.8, 24);
+      bar.fillStyle(0xc9a84c, 1);
+      bar.fillRect(w * 0.1, h * 0.5 - 12, w * 0.8 * v, 24);
+    });
+
+    this.load.on('complete', () => bar.destroy());
+
+    // ── Tileset ──
+    // When you have a real tileset PNG, load it here:
+    // this.load.image('terrain_tiles', 'assets/sprites/terrain.png');
+
+    // ── Stage data ──
+    this.load.json('stage_01', 'src/assets/data/maps/stage_01.json');
+
+    // ── Unit sprite frames (placeholder: generate procedurally in BattleScene) ──
+    // this.load.spritesheet('warrior', 'assets/sprites/warrior.png', { frameWidth: 16, frameHeight: 16 });
+
+    // ── Audio (optional) ──
+    // this.load.audio('bgm_battle', 'assets/audio/battle.ogg');
+  }
+
+  create(): void {
+    this.scene.start('TitleScene');
+  }
+}

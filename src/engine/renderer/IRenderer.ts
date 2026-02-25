@@ -1,0 +1,54 @@
+import type { Pos } from '@/engine/data/types/Map';
+import type { BattleState } from '@/engine/state/BattleState';
+
+export type HighlightMode = 'move' | 'attack' | 'skill' | 'aoe' | 'selected';
+
+export interface IRenderer {
+  // ── Map & Terrain ─────────────────────────────
+  /** Full map redraw (terrain tiles, grid lines). Called once on init and on state change. */
+  renderMap(state: BattleState): void;
+
+  // ── Unit Visuals ───────────────────────────────
+  /** Sync all unit sprite positions/states to current BattleState. */
+  syncUnits(state: BattleState): void;
+
+  /** Remove a unit's sprite (on defeat). */
+  destroyUnit(unitId: string): void;
+
+  // ── Tile Highlights ────────────────────────────
+  /** Highlight a set of tiles in a given mode (color-coded). */
+  highlightTiles(tiles: Pos[], mode: HighlightMode): void;
+
+  /** Clear all tile highlights. */
+  clearHighlights(): void;
+
+  // ── Animations (all return Promise so coordinator can await) ──
+  /** Animate a unit moving along a path. Path excludes the start tile. */
+  animateMove(unitId: string, path: Pos[]): Promise<void>;
+
+  /** Flash the attacker + shake the defender. */
+  animateAttack(attackerId: string, defenderId: string): Promise<void>;
+
+  /** Skill cast VFX (projectile, AoE burst, heal glow, etc.). */
+  animateSkillCast(
+    casterId: string,
+    skillId: string,
+    targets: Pos[],
+  ): Promise<void>;
+
+  // ── Floating Numbers ───────────────────────────
+  showDamageNumber(pos: Pos, dmg: number, crit: boolean): void;
+  showHealNumber(pos: Pos, amount: number): void;
+  showMissText(pos: Pos): void;
+
+  // ── Camera ─────────────────────────────────────
+  /** Pan/zoom camera to center on a tile. */
+  focusTile(pos: Pos): void;
+
+  // ── Lifecycle ──────────────────────────────────
+  /** Called every Phaser update tick (for animations that need per-frame updates). */
+  update(time: number, delta: number): void;
+
+  /** Clean up all Phaser objects (called when scene shuts down). */
+  destroy(): void;
+}

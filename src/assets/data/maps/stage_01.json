@@ -1,0 +1,44 @@
+{
+  "id": "stage_01",
+  "name": "Broken Frontier",
+  "width": 18,
+  "height": 16,
+  "terrain": [
+    ["water","water","water","water","plain","plain","plain","plain","plain","plain","plain","plain","plain","forest","forest","forest","forest","forest"],
+    ["water","mountain","mountain","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","forest","forest","forest","forest","forest"],
+    ["water","mountain","plain","plain","ruins","ruins","plain","plain","plain","plain","plain","plain","plain","plain","forest","forest","forest","forest"],
+    ["plain","plain","plain","plain","ruins","ruins","plain","plain","plain","plain","wall","wall","plain","plain","plain","forest","forest","forest"],
+    ["plain","plain","forest","plain","plain","plain","plain","plain","plain","plain","wall","wall","plain","plain","plain","plain","forest","forest"],
+    ["plain","forest","forest","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","forest","forest"],
+    ["plain","plain","plain","plain","plain","plain","ruins","ruins","ruins","plain","plain","plain","plain","plain","plain","plain","forest","forest"],
+    ["plain","plain","plain","plain","plain","plain","ruins","ruins","ruins","plain","plain","mountain","plain","plain","plain","forest","forest","forest"],
+    ["plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","mountain","mountain","plain","forest","forest","forest","forest"],
+    ["plain","forest","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","forest","forest","forest","forest"],
+    ["forest","forest","plain","plain","plain","plain","wall","wall","plain","plain","plain","plain","plain","plain","plain","forest","forest","forest"],
+    ["forest","plain","plain","plain","plain","plain","wall","wall","plain","plain","plain","plain","plain","plain","plain","plain","forest","forest"],
+    ["forest","plain","plain","ruins","ruins","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain"],
+    ["plain","plain","plain","ruins","ruins","plain","plain","plain","plain","plain","plain","mountain","plain","plain","plain","plain","plain","plain"],
+    ["plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","mountain","mountain","plain","forest","plain","plain","plain","plain"],
+    ["forest","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain","plain"]
+  ],
+  "allySpawns": [
+    { "unitDataId": "warrior", "x": 1, "y": 7 },
+    { "unitDataId": "archer",  "x": 1, "y": 9 },
+    { "unitDataId": "mage",    "x": 2, "y": 11 },
+    { "unitDataId": "cleric",  "x": 2, "y": 13 }
+  ],
+  "enemySpawns": [
+    { "unitDataId": "e_grunt",     "x": 15, "y": 2  },
+    { "unitDataId": "e_grunt",     "x": 15, "y": 4  },
+    { "unitDataId": "e_archer",    "x": 14, "y": 6  },
+    { "unitDataId": "e_knight",    "x": 13, "y": 3  },
+    { "unitDataId": "e_knight",    "x": 13, "y": 8  },
+    { "unitDataId": "e_darkmage",  "x": 15, "y": 8  },
+    { "unitDataId": "e_necro",     "x": 16, "y": 5  },
+    { "unitDataId": "e_berserker", "x": 14, "y": 11 },
+    { "unitDataId": "e_witch",     "x": 16, "y": 12 },
+    { "unitDataId": "e_lord",      "x": 16, "y": 9  }
+  ],
+  "victoryCondition": { "type": "defeat_all" },
+  "defeatCondition":  { "type": "all_allies_dead" }
+}
