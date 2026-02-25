@@ -1,8 +1,11 @@
 import type { BattleState } from '@/engine/state/BattleState';
 import type { Pos } from '@/engine/data/types/Map';
+import type { EffectContext } from '@/engine/data/types/EffectNode';
 import { produce } from 'immer';
 import { EventBus } from '@/engine/utils/EventBus';
 import { MathUtils } from '@/engine/utils/MathUtils';
+import { evaluate } from '@/engine/systems/effectnode/EffectNodeRunner';
+import { getDefaultPassives } from '@/engine/data/defaults/DefaultPassives';
 
 export interface GameAction {
   readonly type: string;
@@ -27,48 +30,44 @@ export class MoveAction implements GameAction {
     const fromX = unit.x;
     const fromY = unit.y;
 
-    // Evaluate ZOC along the path
+    // Evaluate ZOC along the path using EffectNodeRunner
     let actualDestX = this.to.x;
     let actualDestY = this.to.y;
     let actualPath = this.path ? [...this.path] : [];
     let interruptedByZoc = false;
 
     if (this.path && this.path.length > 0) {
-        // Find existing enemy positions to create a virtual ZOC map
-        const enemyPositions = Object.values(state.units)
-            .filter(u => u.hp > 0 && u.team !== unit.team)
-            .map(u => ({ x: u.x, y: u.y }));
-            
-        // Traverse path step by step. We skip the first node if it's the starting position.
+        // Collect all living enemy units with their passive effect nodes
+        const enemies = Object.values(state.units)
+            .filter(u => u.hp > 0 && u.team !== unit.team);
+
+        // Traverse path step by step
         const pathSteps = this.path[0]!.x === fromX && this.path[0]!.y === fromY ? this.path.slice(1) : this.path;
-        
+
         let pathIndex = 0;
-        let wasInZoc = false; // Track if we STARTED inside a ZOC
-        
-        // Initial check: are we starting adjacent to an enemy?
-        wasInZoc = enemyPositions.some(ep => MathUtils.dist({x: fromX, y: fromY}, ep) === 1);
+        let wasInZoc = false;
+
+        // Check if starting in ZOC
+        wasInZoc = this.checkZocAtPosition(state, enemies, unit.instanceId, fromX, fromY);
 
         for (const step of pathSteps) {
             pathIndex++;
-            const inZocNow = enemyPositions.some(ep => MathUtils.dist(step, ep) === 1);
-            
-            // ZOC rule: If you enter an enemy's ZOC, you must stop immediately.
-            // If you start in a ZOC, you can move out of it, but entering ANOTHER ZOC stops you.
+            const inZocNow = this.checkZocAtPosition(state, enemies, unit.instanceId, step.x, step.y);
+
             if (inZocNow && !wasInZoc) {
-                // Stepped into ZOC! Movement halts here.
+                // Entered ZOC — halt movement
                 actualDestX = step.x;
                 actualDestY = step.y;
                 actualPath = this.path.slice(0, pathIndex + (this.path.length > pathSteps.length ? 1 : 0));
                 interruptedByZoc = true;
                 break;
             }
-            // Update wasInZoc for the next step iteration (if we move from ZOC tile to ZOC tile, we must stop)
             if (inZocNow && wasInZoc) {
-                 actualDestX = step.x;
-                 actualDestY = step.y;
-                 actualPath = this.path.slice(0, pathIndex + (this.path.length > pathSteps.length ? 1 : 0));
-                 interruptedByZoc = true;
-                 break;
+                actualDestX = step.x;
+                actualDestY = step.y;
+                actualPath = this.path.slice(0, pathIndex + (this.path.length > pathSteps.length ? 1 : 0));
+                interruptedByZoc = true;
+                break;
             }
             wasInZoc = inZocNow;
         }
@@ -82,7 +81,6 @@ export class MoveAction implements GameAction {
       u.x = actualDestX;
       u.y = actualDestY;
 
-      // Calculate AP cost for the actual traversed distance
       const cost = Math.abs(actualDestX - fromX) + Math.abs(actualDestY - fromY);
       u.currentAP = Math.max(0, u.currentAP - cost);
 
@@ -108,4 +106,40 @@ export class MoveAction implements GameAction {
 
     return next;
   }
+
+  /**
+   * Check if a position is in ZOC of any enemy, using EffectNodeRunner.
+   * Evaluates each enemy's passiveEffects for OnMoveEnter triggers.
+   */
+  private checkZocAtPosition(
+    state: BattleState,
+    enemies: import('@/engine/data/types/Unit').UnitInstance[],
+    movingUnitId: string,
+    x: number,
+    y: number,
+  ): boolean {
+    for (const enemy of enemies) {
+      const dist = MathUtils.dist({ x, y }, { x: enemy.x, y: enemy.y });
+      if (dist > 2) continue; // Quick skip: no ZOC effect has range > 2
+
+      const passives = enemy.passiveEffects && enemy.passiveEffects.length > 0
+        ? enemy.passiveEffects
+        : getDefaultPassives();
+
+      const ctx: EffectContext = {
+        ownerId: enemy.instanceId,
+        triggeringEntityId: movingUnitId,
+        currentTrigger: 'OnMoveEnter',
+        distance: dist,
+        position: { x, y },
+      };
+
+      const results = evaluate(passives, 'OnMoveEnter', ctx, state);
+      if (results.some(r => r.interruptMovement)) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
+

@@ -60,7 +60,7 @@
 - [x] **TerrainData 확장**: `reactions[]`, `tags[]` 필드 추가. `UnitData`에 `passiveEffects[]` 추가.
 - [x] **지형 상호작용 (Interactive Terrain)**: `TerrainInteractionSystem.ts` — 스킬 태그 기반 지형 변환 (예: Fire → burning_forest). 로직 완료.
 - [x] **위험 구역 계산 (Danger Zone Calc)**: `DangerZoneCalc.ts` — 적 전체의 이동+공격 합산 범위 계산. 로직 완료.
-- [ ] **위험 구역 렌더링**: 단축키 `D` 토글 시 붉은색 타일 오버레이 렌더링 (PhaserRenderer + InputHandler 연동 구현 필요).
+- [x] **위험 구역 렌더링**: 단축키 `D` 토글 시 붉은색 타일 오버레이 렌더링. `IRenderer` + `PhaserRenderer` + `InputHandler` + `BattleCoordinator` 연동 완료.
 
 ---
 
