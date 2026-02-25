@@ -40,10 +40,28 @@ export const COUNTER_ATTACK_NODE: EffectNode = {
   priority: 50,
 };
 
+/** Default Chain-Assist: when an ally attacks an enemy within this unit's weapon range, deal 50% bonus damage. */
+export const CHAIN_ASSIST_NODE: EffectNode = {
+  name: 'ChainAssist',
+  type: 'ReactionStrike',
+  trigger: 'OnAllyAttacking',
+  target: 'EventTarget',
+  conditions: [
+    { type: 'TargetInWeaponRange' },
+    { type: 'OwnerAlive' },
+  ],
+  payload: {
+    action: 'BasicAttack',
+    damageMultiplier: 0.5,
+    apCost: 0,
+  },
+  priority: 30,
+};
+
 /**
  * Returns the default passive effects for all units.
  * These are the built-in SRPG mechanics applied unless overridden.
  */
 export function getDefaultPassives(): EffectNode[] {
-  return [ZOC_NODE, COUNTER_ATTACK_NODE];
+  return [ZOC_NODE, COUNTER_ATTACK_NODE, CHAIN_ASSIST_NODE];
 }

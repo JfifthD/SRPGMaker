@@ -6,7 +6,30 @@
     "baseStats": { "hp": 95, "mp": 12, "atk": 22, "def": 14, "spd": 4, "skl": 12 },
     "maxMp": 12,
     "growthRates": { "hp": 65, "atk": 50, "def": 55, "spd": 30, "skl": 40 },
-    "skills": ["w_slash", "w_shield", "w_taunt", "w_cleave"]
+    "skills": ["w_slash", "w_shield", "w_taunt", "w_cleave"],
+    "passiveEffects": [
+      {
+        "name": "IronWallZOC", "type": "MovementControl", "trigger": "OnMoveEnter",
+        "target": "TriggeringEntity",
+        "conditions": [{ "type": "IsEnemy" }, { "type": "Distance", "op": "<=", "value": 1 }],
+        "payload": { "interruptMovement": true },
+        "priority": 100
+      },
+      {
+        "name": "IronWallCounter", "type": "ReactionStrike", "trigger": "OnAfterDamaged",
+        "target": "TriggeringEntity",
+        "conditions": [{ "type": "IsEnemy" }, { "type": "TargetInWeaponRange" }],
+        "payload": { "action": "BasicAttack", "damageMultiplier": 1.2, "apCost": 0 },
+        "priority": 50
+      },
+      {
+        "name": "IronWallChain", "type": "ReactionStrike", "trigger": "OnAllyAttacking",
+        "target": "EventTarget",
+        "conditions": [{ "type": "TargetInWeaponRange" }, { "type": "OwnerAlive" }],
+        "payload": { "action": "BasicAttack", "damageMultiplier": 0.6, "apCost": 0 },
+        "priority": 30
+      }
+    ]
   },
   {
     "id": "archer", "name": "Lyra", "job": "Archer", "affinity": "phys",
@@ -15,7 +38,16 @@
     "baseStats": { "hp": 70, "mp": 14, "atk": 19, "def": 8, "spd": 5, "skl": 20 },
     "maxMp": 14,
     "growthRates": { "hp": 45, "atk": 50, "def": 30, "spd": 50, "skl": 60 },
-    "skills": ["a_shot", "a_rain", "a_pierce", "a_sight"]
+    "skills": ["a_shot", "a_rain", "a_pierce", "a_sight"],
+    "passiveEffects": [
+      {
+        "name": "ArcherChain", "type": "ReactionStrike", "trigger": "OnAllyAttacking",
+        "target": "EventTarget",
+        "conditions": [{ "type": "TargetInWeaponRange" }, { "type": "OwnerAlive" }],
+        "payload": { "action": "BasicAttack", "damageMultiplier": 0.5, "apCost": 0 },
+        "priority": 30
+      }
+    ]
   },
   {
     "id": "mage", "name": "Zara", "job": "Mage", "affinity": "magic",
@@ -33,6 +65,15 @@
     "baseStats": { "hp": 65, "mp": 22, "atk": 10, "def": 10, "spd": 3, "skl": 16 },
     "maxMp": 22,
     "growthRates": { "hp": 40, "atk": 30, "def": 40, "spd": 25, "skl": 55 },
-    "skills": ["c_heal", "c_mass", "c_smite", "c_bless"]
+    "skills": ["c_heal", "c_mass", "c_smite", "c_bless"],
+    "passiveEffects": [
+      {
+        "name": "DivineGuard", "type": "Buff", "trigger": "OnAfterDamaged",
+        "target": "Self",
+        "conditions": [{ "type": "OwnerAlive" }],
+        "payload": { "buff": { "stat": "def", "val": 3, "dur": 1 } },
+        "priority": 40
+      }
+    ]
   }
 ]

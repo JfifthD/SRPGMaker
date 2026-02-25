@@ -68,6 +68,12 @@ export class AttackAction implements GameAction {
       affMult: result.affMult,
     });
 
+    // Chain-Assist: notify allies that an attack happened
+    EventBus.emit('allyAttacked', {
+      attackerId: this.attackerId,
+      defenderId: this.defenderId,
+    });
+
     if (next.units[this.defenderId]!.hp <= 0) {
       Logger.log(`💀 ${defender.name} defeated!`, 'critical');
       EventBus.emit('unitDefeated', { unit: next.units[this.defenderId]! });

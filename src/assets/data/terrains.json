@@ -1,8 +1,59 @@
 [
   { "key": "plain",    "name": "평지",  "tileIndex": 0,  "defBonus": 0, "atkBonus": 0, "moveCost": 1,  "passable": true  },
-  { "key": "forest",   "name": "숲",    "tileIndex": 1,  "defBonus": 3, "atkBonus": 0, "moveCost": 2,  "passable": true  },
-  { "key": "mountain", "name": "산",    "tileIndex": 2,  "defBonus": 5, "atkBonus": 0, "moveCost": 3,  "passable": true  },
-  { "key": "water",    "name": "물",    "tileIndex": 3,  "defBonus": 0, "atkBonus": 0, "moveCost": 3,  "passable": true  },
-  { "key": "wall",     "name": "성벽",  "tileIndex": 4,  "defBonus": 8, "atkBonus": 0, "moveCost": 99, "passable": false },
-  { "key": "ruins",    "name": "폐허",  "tileIndex": 5,  "defBonus": 0, "atkBonus": 2, "moveCost": 1,  "passable": true  }
+  { "key": "forest",   "name": "숲",    "tileIndex": 1,  "defBonus": 3, "atkBonus": 0, "moveCost": 2,  "passable": true,
+    "tags": ["Forest"],
+    "reactions": [
+      {
+        "name": "BurnOnFire",
+        "type": "TerrainTransform",
+        "trigger": "OnHitByTag",
+        "target": "Tile",
+        "conditions": [{ "type": "HasTag", "tag": "fire" }],
+        "payload": { "transformTerrainTo": "burning_forest" }
+      }
+    ]
+  },
+  { "key": "mountain", "name": "산",    "tileIndex": 2,  "defBonus": 5, "atkBonus": 0, "moveCost": 3,  "passable": true, "tags": ["Mountain"] },
+  { "key": "water",    "name": "물",    "tileIndex": 3,  "defBonus": 0, "atkBonus": 0, "moveCost": 3,  "passable": true,
+    "tags": ["Water"],
+    "reactions": [
+      {
+        "name": "FreezeOnIce",
+        "type": "TerrainTransform",
+        "trigger": "OnHitByTag",
+        "target": "Tile",
+        "conditions": [{ "type": "HasTag", "tag": "ice" }],
+        "payload": { "transformTerrainTo": "frozen_water" }
+      }
+    ]
+  },
+  { "key": "wall",     "name": "성벽",  "tileIndex": 4,  "defBonus": 8, "atkBonus": 0, "moveCost": 99, "passable": false, "tags": ["Wall"] },
+  { "key": "ruins",    "name": "폐허",  "tileIndex": 5,  "defBonus": 0, "atkBonus": 2, "moveCost": 1,  "passable": true,  "tags": ["Ruins"] },
+  { "key": "burning_forest", "name": "불타는 숲", "tileIndex": 6, "defBonus": 0, "atkBonus": 0, "moveCost": 1, "passable": true,
+    "tags": ["Fire", "Hazard"],
+    "reactions": [
+      {
+        "name": "BurnOnEnter",
+        "type": "Damage",
+        "trigger": "OnMoveEnter",
+        "target": "TriggeringEntity",
+        "conditions": [],
+        "payload": { "action": "TileDamage", "damageMultiplier": 0.1 }
+      }
+    ],
+    "transformsTo": "ruins"
+  },
+  { "key": "frozen_water", "name": "얼음", "tileIndex": 7, "defBonus": 0, "atkBonus": 0, "moveCost": 1, "passable": true,
+    "tags": ["Ice"],
+    "reactions": [
+      {
+        "name": "SlipOnEnter",
+        "type": "Debuff",
+        "trigger": "OnMoveEnter",
+        "target": "TriggeringEntity",
+        "conditions": [],
+        "payload": { "buff": { "stat": "spd", "val": -2, "dur": 1 } }
+      }
+    ]
+  }
 ]

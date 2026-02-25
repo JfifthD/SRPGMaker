@@ -16,6 +16,7 @@ export interface GameEventMap {
   unitMoved:     { unit: UnitInstance; fromX: number; fromY: number; toX: number; toY: number; path?: Pos[] };
   unitMoveUndo:  { unit: UnitInstance; fromX: number; fromY: number; toX: number; toY: number };
   unitDamaged:   { unit: UnitInstance; dmg: number; crit: boolean; affMult: number };
+  allyAttacked:  { attackerId: string; defenderId: string };
   unitHealed:    { unit: UnitInstance; amount: number };
   unitBuffed:    { unit: UnitInstance; stat: string; val: number; dur: number };
   unitDebuffed:  { unit: UnitInstance; stat: string; val: number; dur: number };
