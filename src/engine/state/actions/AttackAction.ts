@@ -7,6 +7,8 @@ import { MathUtils } from '@/engine/utils/MathUtils';
 import { produce } from 'immer';
 import terrainJson from '@/assets/data/terrains.json';
 import type { TerrainData, TerrainKey } from '@/engine/data/types/Terrain';
+import { getEffectiveStats } from '@/engine/systems/progression/EquipmentSystem';
+import { calculateCombatEXP, grantEXP } from '@/engine/systems/progression/LevelUpSystem';
 
 const TERRAIN_MAP: Record<string, TerrainData> = Object.fromEntries(
   (terrainJson as TerrainData[]).map(t => [t.key, t]),
@@ -33,11 +35,16 @@ export class AttackAction implements GameAction {
     const atkTerrain = getTerrain(state.mapData.terrain[attacker.y]?.[attacker.x] ?? 'plain');
     const defTerrain = getTerrain(state.mapData.terrain[defender.y]?.[defender.x] ?? 'plain');
 
-    // Make attacker face the target instantly
     const newFacing = MathUtils.getHitDirection(attacker.x, attacker.y, defender.x, defender.y);
 
+    // Apply equipment stat bonuses before damage calculation
+    const equipMap = state.gameProject.equipmentMap ?? {};
+    const attEff = getEffectiveStats(attacker, equipMap);
+    const defEff = getEffectiveStats(defender, equipMap);
+
     const result = DamageCalc.calc(
-      {...attacker, facing: newFacing}, defender,
+      { ...attacker, facing: newFacing, atk: attEff.atk },
+      { ...defender, def: defEff.def },
       { mult: 1.0, type: 'phys' },
       atkTerrain, defTerrain,
     );
@@ -47,15 +54,15 @@ export class AttackAction implements GameAction {
     if (result.affMult > 1.05) msg += ` ×${result.affMult.toFixed(1)}`;
     Logger.log(msg, result.crit ? 'critical' : 'action');
 
-    const next = produce(state, draft => {
+    let next = produce(state, draft => {
       const def = draft.units[this.defenderId]!;
       def.hp = Math.max(0, def.hp - result.dmg);
-      
+
       const att = draft.units[this.attackerId]!;
-      att.currentAP = Math.max(0, att.currentAP - 3); // Default attack AP cost
+      att.currentAP = Math.max(0, att.currentAP - 3);
       att.acted = true;
       att.facing = newFacing;
-      
+
       draft.inputMode = 'idle';
       draft.selectedUnitId = null;
       draft.activeSkillId = null;
@@ -68,7 +75,6 @@ export class AttackAction implements GameAction {
       affMult: result.affMult,
     });
 
-    // Chain-Assist: notify allies that an attack happened
     EventBus.emit('allyAttacked', {
       attackerId: this.attackerId,
       defenderId: this.defenderId,
@@ -77,6 +83,30 @@ export class AttackAction implements GameAction {
     if (next.units[this.defenderId]!.hp <= 0) {
       Logger.log(`💀 ${defender.name} defeated!`, 'critical');
       EventBus.emit('unitDefeated', { unit: next.units[this.defenderId]! });
+
+      // Grant combat EXP to attacker for a kill
+      const expGained = calculateCombatEXP(attacker.level, defender.level, true);
+      const attackerData = state.gameProject.units.find(u => u.id === attacker.dataId);
+      const expResult = grantEXP(
+        next.units[this.attackerId]!,
+        expGained,
+        attackerData?.growthRates ?? {},
+      );
+      if (expResult.expGained > 0) {
+        next = produce(next, draft => {
+          draft.units[this.attackerId] = expResult.unit as any;
+        });
+        if (expResult.levelUps.length > 0) {
+          EventBus.emit('unitLeveledUp', {
+            unitId: this.attackerId,
+            levelUps: expResult.levelUps.map(lu => ({
+              previousLevel: lu.previousLevel,
+              newLevel: lu.newLevel,
+              gains: lu.gains as unknown as Record<string, number>,
+            })),
+          });
+        }
+      }
     }
 
     return next;

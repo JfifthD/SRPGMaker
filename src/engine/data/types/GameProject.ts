@@ -7,6 +7,8 @@
 import type { UnitData } from './Unit';
 import type { SkillData } from './Skill';
 import type { TerrainData } from './Terrain';
+import type { EquipmentData } from './Equipment';
+import type { JobData } from './Job';
 
 /** Represents the game.json manifest file at the root of every game project */
 export interface GameManifest {
@@ -38,4 +40,6 @@ export interface GameProject {
   units: UnitData[];
   skillsMap: Record<string, SkillData>;
   terrainMap: Record<string, TerrainData>;
+  equipmentMap: Record<string, EquipmentData>;
+  jobsMap: Record<string, JobData>;
 }

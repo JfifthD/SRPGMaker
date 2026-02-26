@@ -20,6 +20,7 @@ import { buildDangerZone } from '@/engine/systems/movement/DangerZoneCalc';
 import type { BFSContext, ReachableTile } from '@/engine/systems/movement/BFS';
 import terrainJson from '@/assets/data/terrains.json';
 import skillsJson from '@/assets/data/skills.json';
+import { getEffectiveStats } from '@/engine/systems/progression/EquipmentSystem';
 
 export interface ActionPayload {
   id: string; // Used for generic strings now to support sub menus and skills
@@ -250,7 +251,14 @@ export class BattleCoordinator {
         if (sk) {
           const atkTerrain = (TERRAIN_MAP[state.mapData.terrain[attacker.y]?.[attacker.x] as TerrainKey] ?? TERRAIN_MAP['plain'])!;
           const defTerrain = (TERRAIN_MAP[state.mapData.terrain[clicked.y]?.[clicked.x] as TerrainKey] ?? TERRAIN_MAP['plain'])!;
-          const preview = DamageCalc.preview(attacker, clicked, sk, atkTerrain, defTerrain);
+          const equipMap = state.gameProject.equipmentMap ?? {};
+          const attEff = getEffectiveStats(attacker, equipMap);
+          const defEff = getEffectiveStats(clicked, equipMap);
+          const preview = DamageCalc.preview(
+            { ...attacker, atk: attEff.atk },
+            { ...clicked, def: defEff.def },
+            sk, atkTerrain, defTerrain,
+          );
           EventBus.emit('combatPreview', { preview, target: clicked });
         } else {
           EventBus.emit('combatPreview', { preview: null });

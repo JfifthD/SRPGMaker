@@ -11,6 +11,8 @@ import terrainJson from '@/assets/data/terrains.json';
 import type { TerrainData, TerrainKey } from '@/engine/data/types/Terrain';
 import type { UnitInstance } from '@/engine/data/types/Unit';
 import { CritSystem } from '@/engine/systems/combat/CritSystem';
+import { getEffectiveStats } from '@/engine/systems/progression/EquipmentSystem';
+import type { EquipmentData } from '@/engine/data/types/Equipment';
 
 const TERRAIN_MAP: Record<string, TerrainData> = Object.fromEntries(
   (terrainJson as TerrainData[]).map(t => [t.key, t]),
@@ -44,7 +46,6 @@ export class SkillAction implements GameAction {
       ty: this.targetY,
     });
 
-    // Determine facing based on the skill target center
     const newFacing = MathUtils.getHitDirection(caster.x, caster.y, this.targetX, this.targetY);
 
     let next = produce(state, draft => {
@@ -58,14 +59,20 @@ export class SkillAction implements GameAction {
       draft.activeSkillId = null;
     });
 
+    const equipMap = state.gameProject.equipmentMap ?? {};
     for (const target of this.targets) {
-      next = this.applyToTarget(next, caster, target);
+      next = this.applyToTarget(next, caster, target, equipMap);
     }
 
     return next;
   }
 
-  private applyToTarget(state: BattleState, caster: UnitInstance, target: UnitInstance): BattleState {
+  private applyToTarget(
+    state: BattleState,
+    caster: UnitInstance,
+    target: UnitInstance,
+    equipMap: Record<string, EquipmentData>,
+  ): BattleState {
     const sk = this.skill;
 
     if (sk.type === 'heal') {
@@ -82,7 +89,6 @@ export class SkillAction implements GameAction {
 
     if (sk.type === 'buff') {
       if (!sk.buffStat || sk.buffVal === undefined) return state;
-      // Cleric divine_bless cannot target self
       if (sk.id === 'c_bless' && target.instanceId === caster.instanceId) return state;
 
       Logger.log(
@@ -132,11 +138,17 @@ export class SkillAction implements GameAction {
       });
     }
 
-    // Damage skills
+    // Damage skills — apply equipment bonuses
     const atkTerrain = getTerrain(state.mapData.terrain[caster.y]?.[caster.x] ?? 'plain');
     const defTerrain = getTerrain(state.mapData.terrain[target.y]?.[target.x] ?? 'plain');
+    const casterEff = getEffectiveStats(caster, equipMap);
+    const targetEff = getEffectiveStats(target, equipMap);
     const crit = CritSystem.roll(caster);
-    const result = DamageCalc.calc(caster, target, sk, atkTerrain, defTerrain, crit);
+    const result = DamageCalc.calc(
+      { ...caster, atk: casterEff.atk },
+      { ...target, def: targetEff.def },
+      sk, atkTerrain, defTerrain, crit,
+    );
 
     let msg = `  → ${target.name}: ${result.dmg}`;
     if (result.crit) msg += ' <b>CRIT!</b>';
@@ -155,7 +167,6 @@ export class SkillAction implements GameAction {
       t.hp = Math.max(0, t.hp - result.dmg);
     });
 
-    // Secondary debuff on hit (e.g. Frost Bolt → SPD-2)
     if (sk.debuff && next.units[target.instanceId]!.hp > 0) {
       const { stat, val, dur } = sk.debuff;
       const debuffed = BuffSystem.apply(next.units[target.instanceId]!, stat, val, dur);

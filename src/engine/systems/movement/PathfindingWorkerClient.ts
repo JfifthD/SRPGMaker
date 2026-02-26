@@ -5,6 +5,7 @@ import type { UnitInstance } from '@/engine/data/types/Unit';
 import type { WorkerRequest, WorkerResponse, WorkerJobType } from './AStarWorker';
 import terrainJson from '@/assets/data/terrains.json';
 import type { TerrainKey, TerrainData } from '@/engine/data/types/Terrain';
+import { getEquipmentBonuses } from '@/engine/systems/progression/EquipmentSystem';
 
 // Import the worker as a URL using Vite's ?worker feature
 import WorkerURL from './AStarWorker?worker&url';
@@ -80,17 +81,26 @@ export class PathfindingWorkerClient {
 
   async getReachable(unit: UnitInstance, state: BattleState): Promise<ReachableTile[]> {
     const id = `job_${this.jobId++}`;
-    
+
+    // Compute equipment movement bonus and fold it into the movement budget.
+    // The worker uses movBudget as maxCost so equipment-boosted tiles appear in results.
+    // Zone A calculation in BattleCoordinator still uses unit.currentAP (actual AP), which
+    // correctly classifies bonus-range tiles as Zone B (can move there, not enough AP to attack).
+    const equipMap = state.gameProject.equipmentMap ?? {};
+    const movBonus = getEquipmentBonuses(unit, equipMap).mov;
+    const movBudget = movBonus > 0 ? unit.currentAP + movBonus : undefined;
+
     return new Promise((resolve, reject) => {
       this.resolvers.set(id, { resolve, reject });
-      
+
       const req: WorkerRequest = {
         id,
         type: 'REACHABLE',
-        unit, // Structured cloning handles plain objects
-        ...this.buildContext(state)
+        unit,
+        ...this.buildContext(state),
+        ...(movBudget !== undefined ? { movBudget } : {}),
       };
-      
+
       this.worker.postMessage(req);
     });
   }
