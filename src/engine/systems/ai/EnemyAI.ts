@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────
 //  Enemy AI — Utility-Based Decision Making
-//  With AI Personality Archetypes
+//  With AI Personality Archetypes & AIConfig
 // ─────────────────────────────────────────────
 
 import type { BattleState } from '@/engine/state/BattleState';
@@ -18,27 +18,10 @@ import { RangeCalc } from '@/engine/systems/movement/RangeCalc';
 import { MathUtils } from '@/engine/utils/MathUtils';
 import type { SkillData } from '@/engine/data/types/Skill';
 import type { TerrainData, TerrainKey } from '@/engine/data/types/Terrain';
-import { getSkillsMap, getTerrainMap } from '@/engine/loader/GameProjectLoader';
-
-function makeBFSCtx(state: BattleState) {
-  const terrainMap = getTerrainMap();
-  const defaultTerrain = terrainMap['plain'] as TerrainData;
-  return {
-    width: state.mapData.width,
-    height: state.mapData.height,
-    getTerrain: (x: number, y: number) =>
-      terrainMap[state.mapData.terrain[y]?.[x] as TerrainKey] ?? defaultTerrain,
-    getUnit: (x: number, y: number) => StateQuery.at(state, x, y),
-  };
-}
 
 export const EnemyAI = {
   /**
    * Decide the best actions for one enemy unit this turn.
-   * Decision priority differs per aiType:
-   *   - aggressive: skill > attack > move (original behavior)
-   *   - defensive:  retreat when low HP, otherwise attack > skill > move
-   *   - support:    heal/buff skill on allies > attack > move
    */
   async decide(enemy: UnitInstance, state: BattleState): Promise<GameAction[]> {
     const allies = StateQuery.liveAllies(state);
@@ -46,7 +29,41 @@ export const EnemyAI = {
 
     const actions: GameAction[] = [];
 
-    // ── Support: prioritise heal/buff on friendly units ──
+    // ── 0. AIConfig: Detect Range Check ──
+    let isProvoked = true;
+    if (enemy.aiConfig?.detectRange !== undefined) {
+      const closestDist = Math.min(...allies.map(a => MathUtils.dist(enemy, a)));
+      if (closestDist > enemy.aiConfig.detectRange) {
+        isProvoked = false;
+      }
+    }
+
+    // If not provoked, handle non-combat behaviors (Patrol / Guard)
+    if (!isProvoked) {
+      if (enemy.aiConfig?.patrolPath?.length) {
+        const patrolMove = await EnemyAI.choosePatrolMove(enemy, state);
+        if (patrolMove) {
+          actions.push(patrolMove);
+          return actions;
+        }
+      }
+      if (enemy.aiConfig?.guardTile) {
+         const d = MathUtils.dist(enemy, enemy.aiConfig.guardTile);
+         if (d > 0) {
+           const guardMove = await EnemyAI.chooseBestMove(enemy, { ...enemy.aiConfig.guardTile, instanceId: 'guard', team: 'ally' } as any, state);
+           if (guardMove) {
+             actions.push(guardMove);
+             return actions;
+           }
+         }
+      }
+      // Just wait
+      return [new WaitAction(enemy.instanceId)];
+    }
+
+    // ── Combat Behaviors ──
+
+    // Support: prioritise heal/buff on friendly units
     if (enemy.aiType === 'support') {
       const friendlies = StateQuery.liveEnemies(state).filter(u => u.instanceId !== enemy.instanceId);
       if (friendlies.length) {
@@ -58,28 +75,44 @@ export const EnemyAI = {
       }
     }
 
-    // ── Defensive: retreat when HP is critically low ──
-    if (enemy.aiType === 'defensive') {
-      const hpRatio = enemy.hp / enemy.maxHp;
-      if (hpRatio < 0.5) {
-        const retreatAction = await EnemyAI.chooseRetreatMove(enemy, allies, state);
-        if (retreatAction) {
-          actions.push(retreatAction);
-          return actions;
-        }
+    // Defensive/Hit&Run/Patrol: retreat when HP is critically low
+    const hpRatio = enemy.hp / enemy.maxHp;
+    const retreatThreshold = enemy.aiType === 'defensive' ? 0.5 :
+                             enemy.aiType === 'hit_and_run' ? 0.8 :
+                             enemy.aiType === 'patrol' ? 0.4 : 0;
+                             
+    if (hpRatio < retreatThreshold) {
+      const retreatAction = await EnemyAI.chooseRetreatMove(enemy, allies, state);
+      if (retreatAction) {
+        actions.push(retreatAction);
+        return actions;
       }
     }
 
-    // ── 1. Try to use a damaging skill ──
+    // 1. Try to use a damaging skill
     const bestSkillAction = EnemyAI.chooseBestSkill(enemy, allies, state);
     if (bestSkillAction) {
       actions.push(bestSkillAction);
       return actions; // skill used → end turn
     }
 
-    // ── 2. Move toward best target ──
+    // 2. Move toward best target
     const target = EnemyAI.pickTarget(enemy, allies, state);
     const dist = MathUtils.dist(enemy, target);
+
+    // If unit is Boss with Guard Tile, it might refuse to move unless target is in attack range
+    if (enemy.aiType === 'boss' && enemy.aiConfig?.guardTile && dist > enemy.atkRange) {
+      // Return to guard tile if not already there, otherwise just wait
+      const d = MathUtils.dist(enemy, enemy.aiConfig.guardTile);
+      if (d > 0) {
+        const guardMove = await EnemyAI.chooseBestMove(enemy, { ...enemy.aiConfig.guardTile, instanceId: 'guard', team: 'ally' } as any, state);
+        if (guardMove) {
+          actions.push(guardMove);
+          return actions;
+        }
+      }
+      return [new WaitAction(enemy.instanceId)];
+    }
 
     if (dist > enemy.atkRange) {
       const moveAction = await EnemyAI.chooseBestMove(enemy, target, state);
@@ -94,7 +127,7 @@ export const EnemyAI = {
       }
     }
 
-    // ── 3. Attack in range ──
+    // 3. Attack in range
     if (dist <= enemy.atkRange) {
       actions.push(new AttackAction(enemy.instanceId, target.instanceId));
       return actions;
@@ -104,23 +137,56 @@ export const EnemyAI = {
   },
 
   /**
-   * Pick the best attack target based on AI personality:
+   * Determine the next waypoint in the patrol path and move towards it.
+   */
+  async choosePatrolMove(enemy: UnitInstance, state: BattleState): Promise<MoveAction | null> {
+    const path = enemy.aiConfig?.patrolPath;
+    if (!path || !path.length) return null;
+
+    let closestIdx = 0;
+    let minDist = Infinity;
+    for (let i = 0; i < path.length; i++) {
+      const d = MathUtils.dist(enemy, path[i]!);
+      if (d < minDist) {
+        minDist = d;
+        closestIdx = i;
+      }
+    }
+    
+    // Target the next waypoint if we are already at the closest one
+    const targetWaypoint = (minDist === 0) ? path[(closestIdx + 1) % path.length]! : path[closestIdx]!;
+    
+    // Fake a UnitInstance target for chooseBestMove
+    const dummyTarget: any = { x: targetWaypoint.x, y: targetWaypoint.y, instanceId: 'waypoint', hp: 1 };
+    
+    return await EnemyAI.chooseBestMove(enemy, dummyTarget, state);
+  },
+
+  /**
+   * Pick the best attack target based on AI personality & AIConfig.targetPriority:
+   * - Config overrides base personality.
    * - aggressive: lowest HP ally in range, else nearest (original)
-   * - defensive:  ally that poses the greatest threat (highest ATK) to prioritise them
-   * - support:    closest ally (unit wants to stay near enemies, not commit deep)
+   * - defensive:  ally that poses greatest threat (highest ATK)
+   * - support:    closest ally
+   * - hit_and_run: strictly the weakest
+   * - boss: strongest
    */
   pickTarget(enemy: UnitInstance, allies: UnitInstance[], state: BattleState): UnitInstance {
-    if (enemy.aiType === 'defensive') {
-      // Prefer high-ATK ally — neutralise the biggest threat first
-      const inRange = allies.filter(a => MathUtils.dist(enemy, a) <= enemy.atkRange);
-      const pool = inRange.length > 0 ? inRange : allies;
-      return pool.reduce((a, b) => a.atk >= b.atk ? a : b);
+    const tp = enemy.aiConfig?.targetPriority;
+    
+    // Priority Overrides from Config
+    if (tp === 'healer_first') {
+      const healers = allies.filter(a => a.job.toLowerCase().includes('cleric') || a.job.toLowerCase().includes('priest') || a.job.toLowerCase().includes('bishop'));
+      if (healers.length > 0) return healers.reduce((a, b) => MathUtils.dist(enemy, a) <= MathUtils.dist(enemy, b) ? a : b);
     }
-
-    if (enemy.aiType === 'support') {
-      // Attack the nearest ally — support stays near the action
-      return allies.reduce((a, b) =>
-        MathUtils.dist(enemy, a) <= MathUtils.dist(enemy, b) ? a : b);
+    if (tp === 'weakest' || enemy.aiType === 'hit_and_run') {
+      return allies.reduce((a, b) => a.hp <= b.hp ? a : b);
+    }
+    if (tp === 'strongest' || enemy.aiType === 'boss' || enemy.aiType === 'defensive') {
+      return allies.reduce((a, b) => a.atk >= b.atk ? a : b);
+    }
+    if (tp === 'nearest' || enemy.aiType === 'support') {
+      return allies.reduce((a, b) => MathUtils.dist(enemy, a) <= MathUtils.dist(enemy, b) ? a : b);
     }
 
     // aggressive (default): lowest HP ally in range, else nearest
@@ -128,13 +194,11 @@ export const EnemyAI = {
     if (inRange.length > 0) {
       return inRange.reduce((a, b) => a.hp <= b.hp ? a : b);
     }
-    return allies.reduce((a, b) =>
-      MathUtils.dist(enemy, a) <= MathUtils.dist(enemy, b) ? a : b);
+    return allies.reduce((a, b) => MathUtils.dist(enemy, a) <= MathUtils.dist(enemy, b) ? a : b);
   },
 
   /**
-   * Support-only: choose the best heal or buff skill to cast on a friendly unit.
-   * Evaluates heal skills on the most wounded ally; buff skills on a random ally.
+   * Support-only: choose the best heal or buff skill.
    */
   chooseSupportSkill(
     caster: UnitInstance,
@@ -143,9 +207,9 @@ export const EnemyAI = {
   ): SkillAction | null {
     if (!caster.mp || !caster.skills.length) return null;
 
-    let bestScore = 0; // only cast if it's actually useful
+    let bestScore = 0; 
     let bestAction: SkillAction | null = null;
-    const skillsMap = getSkillsMap();
+    const skillsMap = state.gameProject.skillsMap;
 
     for (const sid of caster.skills) {
       const sk = skillsMap[sid];
@@ -180,7 +244,7 @@ export const EnemyAI = {
     let bestScore = -Infinity;
     let bestAction: SkillAction | null = null;
 
-    const skillsMap = getSkillsMap();
+    const skillsMap = state.gameProject.skillsMap;
     for (const sid of enemy.skills) {
       const sk = skillsMap[sid];
       if (!sk || enemy.mp < sk.mp || sk.target === 'self' || sk.target === 'ally') continue;
@@ -258,7 +322,12 @@ export const EnemyAI = {
         
         const occ = StateQuery.at(state, step.x, step.y);
         if (!occ || occ.instanceId === enemy.instanceId) {
-          bestTile = step;
+           // Boss restriction: do not leave guard tile unless moving to attack!
+           if (enemy.aiType === 'boss' && enemy.aiConfig?.guardTile) {
+             const distToTarget = Math.abs(step.x - target.x) + Math.abs(step.y - target.y);
+             if (distToTarget > enemy.atkRange) continue; // Skip tiles that don't let boss attack
+           }
+           bestTile = step;
         }
       }
       

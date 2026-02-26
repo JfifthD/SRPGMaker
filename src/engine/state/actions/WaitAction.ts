@@ -16,20 +16,10 @@ export class WaitAction implements GameAction {
 
     return produce(state, draft => {
       const u = draft.units[this.unitId]!;
-      
-      // Charge mechanic: if no action was taken this turn (moved/acted still false),
-      // carry AP over to next turn for overcast accumulation.
-      // Use moved/acted flags (reset at turn start) not currentAP (can exceed maxAP from charge).
-      if (!u.moved && !u.acted) {
-        Logger.log(`${u.name} is Gathering Focus!`, 'system');
-      } else {
-        u.currentAP = 0; // Consume remaining AP after partial actions
-      }
+      u.currentAP = 0; // Consume remaining AP
 
       u.moved = true;
       u.acted = true;
-      draft.inputMode = 'idle';
-      draft.selectedUnitId = null;
     });
   }
 }

@@ -1,0 +1,57 @@
+[
+  {
+    "id": "ch01_prologue",
+    "mode": "scenario",
+    "lines": [
+      {
+        "type": "narration",
+        "text": "The kingdom of Aldora. Three years after the Shadow War.\nThe border now runs silent — no scouts, no signals."
+      },
+      { "type": "pause", "duration": 1000 },
+      {
+        "type": "line",
+        "speaker": "kael",
+        "emotion": "determined",
+        "side": "left",
+        "text": "Serra. We move at dawn. The border scouts haven't reported back."
+      },
+      {
+        "type": "line",
+        "speaker": "serra",
+        "emotion": "fearful",
+        "side": "right",
+        "text": "This silence... it's not natural. Something is blocking communications."
+      },
+      {
+        "type": "choice",
+        "text": "How do you want to proceed?",
+        "choices": [
+          { "label": "Push forward immediately", "next": "branch_aggressive" },
+          { "label": "Wait for more information", "next": "branch_cautious" }
+        ]
+      }
+    ],
+    "branches": {
+      "branch_aggressive": [
+        {
+          "type": "line",
+          "speaker": "kael",
+          "emotion": "determined",
+          "side": "left",
+          "text": "We can't afford to wait. Every hour we delay, more lives are at risk."
+        },
+        { "type": "end" }
+      ],
+      "branch_cautious": [
+        {
+          "type": "line",
+          "speaker": "kael",
+          "emotion": "neutral",
+          "side": "left",
+          "text": "You're right. Rushing in blind would be reckless. We hold and gather intel."
+        },
+        { "type": "end" }
+      ]
+    }
+  }
+]

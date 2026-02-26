@@ -65,6 +65,30 @@ const WEIGHTS: Record<AIType, AIWeights> = {
     distMult:         8,
     supportBonus:     200,   // strong bonus for heal/buff skills
   },
+  hit_and_run: {
+    attackMult:       1.0,
+    retreatThreshold: 0.8,   // very careful, retreats after taking little damage or hitting
+    retreatPenalty:   400,
+    threatMult:       3.0,   // highly threat-averse
+    distMult:         10,
+    supportBonus:     0,
+  },
+  boss: {
+    attackMult:       1.5,
+    retreatThreshold: 0.1,   // fights to the bitter end
+    retreatPenalty:   50,
+    threatMult:       0.5,   // ignores threat
+    distMult:         5,     // happy to wait for enemies to come close
+    supportBonus:     0,
+  },
+  patrol: {
+    attackMult:       1.0,
+    retreatThreshold: 0.4,
+    retreatPenalty:   150,
+    threatMult:       1.0,
+    distMult:         15,    // but overridden by patrol route logic unless engaged
+    supportBonus:     0,
+  },
 };
 
 export function getWeights(aiType: AIType): AIWeights {

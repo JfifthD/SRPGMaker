@@ -4,6 +4,7 @@ import type { BattleState } from '@/engine/state/BattleState';
 import type { MapData } from '@/engine/data/types/Map';
 import type { SkillData } from '@/engine/data/types/Skill';
 import type { TerrainData } from '@/engine/data/types/Terrain';
+import type { GameProject } from '@/engine/data/types/GameProject';
 
 // Mock Pathworker before any imports that use it
 vi.mock('@/engine/systems/movement/PathfindingWorkerClient', () => ({
@@ -13,18 +14,16 @@ vi.mock('@/engine/systems/movement/PathfindingWorkerClient', () => ({
   },
 }));
 
-// Mock GameProjectLoader — provide real skill/terrain data for chooseBestSkill tests
-vi.mock('@/engine/loader/GameProjectLoader', async () => {
-  const skillsJson = (await import('@/assets/data/skills.json')).default as Record<string, SkillData>;
-  const terrainJson = (await import('@/assets/data/terrains.json')).default as TerrainData[];
-  const terrainMap = Object.fromEntries(terrainJson.map(t => [t.key, t]));
-  return {
-    getSkillsMap: () => skillsJson,
-    getTerrainMap: () => terrainMap,
-    setGameContext: vi.fn(),
-    loadGameProject: vi.fn(),
-  };
-});
+// Import skill/terrain data to build a real gameProject stub for tests
+import skillsJson from '@/assets/data/skills.json';
+import terrainsJson from '@/assets/data/terrains.json';
+
+const stubGameProject: GameProject = {
+  manifest: { id: 'test', name: 'Test', version: '0.1.0', engineVersion: '>=0.1.0', entryMap: 'stage_01', data: { units: '', skills: '', terrains: '', mapsDir: '' } },
+  units: [],
+  skillsMap: skillsJson as unknown as Record<string, SkillData>,
+  terrainMap: Object.fromEntries((terrainsJson as unknown as TerrainData[]).map(t => [t.key, t])),
+};
 
 // Import after mock is in place
 import { EnemyAI } from '@/engine/systems/ai/EnemyAI';
@@ -40,7 +39,7 @@ function makeUnit(overrides: Partial<UnitInstance> = {}): UnitInstance {
     x: 0, y: 0, facing: 'S',
     currentAP: 3, maxAP: 5, ct: 0,
     moved: false, acted: false,
-    buffs: [], level: 1,
+    buffs: [], level: 1, exp: 0, equipment: { weapon: null, armor: null, accessory: null },
     skills: [], passiveEffects: [],
     aiType: 'aggressive', // default personality
     ...overrides,
@@ -57,13 +56,14 @@ function makeState(units: UnitInstance[]): BattleState {
     defeatCondition: { type: 'all_allies_dead' },
   };
   return {
+    gameProject: stubGameProject,
     mapData,
     units: Object.fromEntries(units.map(u => [u.instanceId, u])),
     turn: 1, phase: 'PLAYER_IDLE',
     selectedUnitId: null, activeUnitId: null, inputMode: 'idle',
     activeSkillId: null, busy: false, actionLog: [],
     stateHistory: [],
-  };
+  } as BattleState;
 }
 
 beforeEach(() => {

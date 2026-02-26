@@ -1,21 +1,21 @@
 {
-  "w_slash":  { "id": "w_slash",  "name": "HEAVY SLASH",    "type": "phys",   "target": "enemy", "mp": 0, "range": 1, "aoe": false, "mult": 1.7, "desc": "강력한 베기", "tags": ["physical","melee"] },
-  "w_shield": { "id": "w_shield", "name": "IRON GUARD",     "type": "buff",   "target": "self",  "mp": 2, "range": 0, "aoe": false, "buffStat": "def", "buffVal": 8, "buffDur": 2, "desc": "자신 DEF+8 (2턴)", "tags": ["buff","armor"] },
-  "w_taunt":  { "id": "w_taunt",  "name": "WARCRY",         "type": "debuff", "target": "enemy", "mp": 3, "range": 2, "aoe": true,  "buffStat": "atk", "buffVal": -4, "buffDur": 2, "desc": "범위 내 적 ATK-4", "tags": ["debuff","aoe"] },
-  "w_cleave": { "id": "w_cleave", "name": "CLEAVE",         "type": "phys",   "target": "enemy", "mp": 4, "range": 1, "aoe": true,  "mult": 1.3, "desc": "인접 모든 적 공격", "tags": ["physical","aoe","melee"] },
+  "w_slash":  { "id": "w_slash",  "name": "HEAVY SLASH",    "type": "phys",   "vfxId": "slash", "target": "enemy", "mp": 0, "range": 1, "aoe": false, "mult": 1.7, "desc": "강력한 베기", "tags": ["physical","melee"] },
+  "w_shield": { "id": "w_shield", "name": "IRON GUARD",     "type": "buff",   "vfxId": "buff",  "target": "self",  "mp": 2, "range": 0, "aoe": false, "buffStat": "def", "buffVal": 8, "buffDur": 2, "desc": "자신 DEF+8 (2턴)", "tags": ["buff","armor"] },
+  "w_taunt":  { "id": "w_taunt",  "name": "WARCRY",         "type": "debuff", "vfxId": "buff",  "target": "enemy", "mp": 3, "range": 2, "aoe": true,  "buffStat": "atk", "buffVal": -4, "buffDur": 2, "desc": "범위 내 적 ATK-4", "tags": ["debuff","aoe"] },
+  "w_cleave": { "id": "w_cleave", "name": "CLEAVE",         "type": "phys",   "vfxId": "slash", "target": "enemy", "mp": 4, "range": 1, "aoe": true,  "mult": 1.3, "desc": "인접 모든 적 공격", "tags": ["physical","aoe","melee"] },
 
-  "a_shot":   { "id": "a_shot",   "name": "PRECISE SHOT",   "type": "phys",   "target": "enemy", "mp": 0, "range": 4, "aoe": false, "mult": 1.5, "desc": "장거리 사격", "tags": ["physical","ranged"] },
-  "a_rain":   { "id": "a_rain",   "name": "ARROW RAIN",     "type": "phys",   "target": "enemy", "mp": 4, "range": 4, "aoe": true,  "mult": 1.0, "desc": "범위 화살 세례", "tags": ["physical","ranged","aoe"] },
-  "a_pierce": { "id": "a_pierce", "name": "PIERCING BOLT",  "type": "phys",   "target": "enemy", "mp": 2, "range": 3, "aoe": false, "mult": 2.0, "ignoreDef": true, "desc": "DEF 무시 관통", "tags": ["physical","ranged","armor-pierce"] },
-  "a_sight":  { "id": "a_sight",  "name": "EAGLE EYE",      "type": "buff",   "target": "self",  "mp": 2, "range": 0, "aoe": false, "buffStat": "skl", "buffVal": 8, "buffDur": 2, "desc": "자신 SKL+8 (2턴)", "tags": ["buff"] },
+  "a_shot":   { "id": "a_shot",   "name": "PRECISE SHOT",   "type": "phys",   "vfxId": "hit",   "target": "enemy", "mp": 0, "range": 4, "aoe": false, "mult": 1.5, "desc": "장거리 사격", "tags": ["physical","ranged"] },
+  "a_rain":   { "id": "a_rain",   "name": "ARROW RAIN",     "type": "phys",   "vfxId": "hit",   "target": "enemy", "mp": 4, "range": 4, "aoe": true,  "mult": 1.0, "desc": "범위 화살 세례", "tags": ["physical","ranged","aoe"] },
+  "a_pierce": { "id": "a_pierce", "name": "PIERCING BOLT",  "type": "phys",   "vfxId": "hit",   "target": "enemy", "mp": 2, "range": 3, "aoe": false, "mult": 2.0, "ignoreDef": true, "desc": "DEF 무시 관통", "tags": ["physical","ranged","armor-pierce"] },
+  "a_sight":  { "id": "a_sight",  "name": "EAGLE EYE",      "type": "buff",   "vfxId": "buff",  "target": "self",  "mp": 2, "range": 0, "aoe": false, "buffStat": "skl", "buffVal": 8, "buffDur": 2, "desc": "자신 SKL+8 (2턴)", "tags": ["buff"] },
 
-  "m_fire":   { "id": "m_fire",   "name": "FIREBALL",       "type": "magic",  "target": "enemy", "mp": 4, "range": 3, "aoe": true,  "mult": 1.8, "desc": "범위 마법 폭발", "tags": ["magic","fire","aoe"] },
-  "m_frost":  { "id": "m_frost",  "name": "FROST BOLT",     "type": "magic",  "target": "enemy", "mp": 2, "range": 3, "aoe": false, "mult": 1.4, "debuff": { "stat": "spd", "val": -2, "dur": 1 }, "desc": "적 SPD-2 (1턴)", "tags": ["magic","ice","debuff"] },
-  "m_blast":  { "id": "m_blast",  "name": "ARCANE BLAST",   "type": "magic",  "target": "enemy", "mp": 3, "range": 2, "aoe": false, "mult": 2.1, "desc": "강력한 마법 집중포", "tags": ["magic"] },
-  "m_barrier":{ "id": "m_barrier","name": "MANA BARRIER",   "type": "buff",   "target": "any",   "mp": 3, "range": 1, "aoe": false, "buffStat": "def", "buffVal": 6, "buffDur": 2, "desc": "자신/아군 DEF+6", "tags": ["buff","magic"] },
+  "m_fire":   { "id": "m_fire",   "name": "FIREBALL",       "type": "magic",  "vfxId": "hit",   "target": "enemy", "mp": 4, "range": 3, "aoe": true,  "mult": 1.8, "desc": "범위 마법 폭발", "tags": ["magic","fire","aoe"] },
+  "m_frost":  { "id": "m_frost",  "name": "FROST BOLT",     "type": "magic",  "vfxId": "hit",   "target": "enemy", "mp": 2, "range": 3, "aoe": false, "mult": 1.4, "debuff": { "stat": "spd", "val": -2, "dur": 1 }, "desc": "적 SPD-2 (1턴)", "tags": ["magic","ice","debuff"] },
+  "m_blast":  { "id": "m_blast",  "name": "ARCANE BLAST",   "type": "magic",  "vfxId": "hit",   "target": "enemy", "mp": 3, "range": 2, "aoe": false, "mult": 2.1, "desc": "강력한 마법 집중포", "tags": ["magic"] },
+  "m_barrier":{ "id": "m_barrier","name": "MANA BARRIER",   "type": "buff",   "vfxId": "buff",  "target": "any",   "mp": 3, "range": 1, "aoe": false, "buffStat": "def", "buffVal": 6, "buffDur": 2, "desc": "자신/아군 DEF+6", "tags": ["buff","magic"] },
 
-  "c_heal":   { "id": "c_heal",   "name": "HEAL",           "type": "heal",   "target": "any",   "mp": 2, "range": 2, "aoe": false, "healVal": 30, "desc": "자신/아군 HP 회복", "tags": ["heal","holy"] },
-  "c_mass":   { "id": "c_mass",   "name": "MASS HEAL",      "type": "heal",   "target": "ally",  "mp": 5, "range": 2, "aoe": true,  "healVal": 18, "desc": "범위 내 아군 회복", "tags": ["heal","holy","aoe"] },
-  "c_smite":  { "id": "c_smite",  "name": "HOLY SMITE",     "type": "holy",   "target": "enemy", "mp": 3, "range": 2, "aoe": false, "mult": 2.0, "desc": "신성 공격 (Dark×2)", "tags": ["holy","magic"] },
-  "c_bless":  { "id": "c_bless",  "name": "DIVINE BLESS",   "type": "buff",   "target": "ally",  "mp": 3, "range": 1, "aoe": false, "buffStat": "atk", "buffVal": 6, "buffDur": 2, "desc": "아군 ATK+6 (자신불가)", "tags": ["buff","holy"] }
+  "c_heal":   { "id": "c_heal",   "name": "HEAL",           "type": "heal",   "vfxId": "heal",  "target": "any",   "mp": 2, "range": 2, "aoe": false, "healVal": 30, "desc": "자신/아군 HP 회복", "tags": ["heal","holy"] },
+  "c_mass":   { "id": "c_mass",   "name": "MASS HEAL",      "type": "heal",   "vfxId": "heal",  "target": "ally",  "mp": 5, "range": 2, "aoe": true,  "healVal": 18, "desc": "범위 내 아군 회복", "tags": ["heal","holy","aoe"] },
+  "c_smite":  { "id": "c_smite",  "name": "HOLY SMITE",     "type": "holy",   "vfxId": "hit",   "target": "enemy", "mp": 3, "range": 2, "aoe": false, "mult": 2.0, "desc": "신성 공격 (Dark×2)", "tags": ["holy","magic"] },
+  "c_bless":  { "id": "c_bless",  "name": "DIVINE BLESS",   "type": "buff",   "vfxId": "buff",  "target": "ally",  "mp": 3, "range": 1, "aoe": false, "buffStat": "atk", "buffVal": 6, "buffDur": 2, "desc": "아군 ATK+6 (자신불가)", "tags": ["buff","holy"] }
 }

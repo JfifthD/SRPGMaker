@@ -37,6 +37,10 @@ export class BootScene extends Phaser.Scene {
 
     // ── Audio (optional) ──
     // this.load.audio('bgm_battle', 'assets/audio/battle.ogg');
+
+    // ── Dialogue scripts ──
+    // Naming convention: {stageId}_dialogues → loaded as JSON array of DialogueScript
+    this.load.json('stage_01_dialogues', 'src/assets/data/dialogues/stage_01_dialogues.json');
   }
 
   create(): void {
