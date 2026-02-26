@@ -19,6 +19,9 @@ export class MoveAction implements GameAction {
     private readonly unitId: string,
     private readonly to: Pos,
     private readonly path?: Pos[],
+    /** BFS-computed AP cost for this move. Must be provided when a path exists so that
+     *  AP deduction happens inside the action (tracked in stateHistory) rather than outside. */
+    private readonly cost?: number,
   ) {}
 
   get destination(): Pos { return this.to; }
@@ -81,11 +84,29 @@ export class MoveAction implements GameAction {
       u.x = actualDestX;
       u.y = actualDestY;
 
-      const cost = Math.abs(actualDestX - fromX) + Math.abs(actualDestY - fromY);
-      u.currentAP = Math.max(0, u.currentAP - cost);
+      // AP deduction: use the BFS-computed cost when provided, otherwise fall back to Manhattan.
+      // This ensures the deduction is part of the dispatched action and therefore tracked in
+      // stateHistory — making full undo/cancel possible.
+      let apDeduct: number;
+      if (this.cost !== undefined) {
+          apDeduct = this.cost;
+      } else if (actualPath.length === 0) {
+          apDeduct = Math.abs(actualDestX - fromX) + Math.abs(actualDestY - fromY);
+      } else {
+          apDeduct = 0; // cost=0 means caller forgot to pass it; no silent double-deduction
+      }
+      u.currentAP = Math.max(0, u.currentAP - apDeduct);
+
+      // Auto-transition to facing mode when AP is fully consumed by this move
+      if (u.currentAP <= 0) {
+          draft.inputMode = 'facing';
+      }
 
       u.moved = true;
-      draft.inputMode = 'idle';
+      // inputMode is set to 'facing' above if AP=0, otherwise reset to 'idle'
+      if (draft.inputMode !== 'facing') {
+          draft.inputMode = 'idle';
+      }
       draft.selectedUnitId = this.unitId;
     });
 

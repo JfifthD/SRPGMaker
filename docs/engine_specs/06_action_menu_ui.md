@@ -46,7 +46,7 @@ interface ActionMenuItem {
 | `cmd_move`     | 이동    | PRIMARY  | `TileCoordinate {x, y}` (보통 메뉴 없이 이동 범위를 직접 클릭하여 대체됨) |
 | `cmd_attack`   | 공격    | PRIMARY  | `TargetUnitId` (무기 사거리 내의 단일 타겟)                               |
 | `cmd_skill`    | 스킬    | SKILL    | 스킬 목록 서브메뉴 팝업 -> 선택 후 `TargetUnitId` 배열                    |
-| `cmd_wait`     | 대기    | SYSTEM   | 없음. 즉시 턴 종료 및 잔여 AP 이월(Carry-over) 처리.                      |
+| `cmd_wait`     | 대기    | SYSTEM   | 없음. 즉시 턴 종료 및 잔여 AP 소멸(No Carry-over) 처리.                   |
 | `cmd_end_turn` | 턴 종료 | SYSTEM   | `FacingDirection` (유닛이 쳐다볼 최종 방향 N/E/S/W) 선택 UI 팝업.         |
 
 ---
@@ -76,3 +76,48 @@ Engine.actionMenu.registerCustomAction("pull_lever", {
 ```
 
 UI 레이어는 위 코드를 전혀 알지 못하며, 오직 조건(`checkCondition`)이 충족될 때 화면 하단에 **[레버 당기기]** 버튼을 렌더링하고, 클릭 시 ID를 되돌려주는 역할만 맡습니다.
+
+---
+
+## 4. 3-Zone Static Reachability Overlay (AP 시각화 시스템)
+
+### 설계 원칙
+
+호버링 기반 정보 제공의 한계(플레이어가 타일마다 마우스를 올려야 AP 여유 판단 가능)를 해소하기 위해, 유닛 선택 시 **즉시** 3가지 구역을 정적으로 렌더링합니다. FFT / 창세기전 계열의 이중 레이어 방식에서 발전시킨 AP 잔량 연동 구역 시스템입니다.
+
+### Zone 정의
+
+| Zone | 색상 | 조건 | 의미 |
+|---|---|---|---|
+| **A (teal `#00c8a0`)** | 밝은 청록 | `remainingAP = currentAP - moveCost >= atkCost` | 이동 후 공격까지 가능 |
+| **B (dim blue `#2a5fa8`)** | 흐린 파랑 | `remainingAP < atkCost` | 이동 가능, AP 부족으로 공격 불가 |
+| **C (dark red `#b02020`)** | 어두운 빨강 | Zone A 전체 위치의 공격 범위 합집합, 이동 범위 제외 | 어디서든 공격이 닿는 영역 |
+
+### 렌더링 레이어 구조
+
+```
+moveGraphics (persist layer):  Zone C → Zone B → Zone A  (back-to-front, 유닛 선택 유지)
+actionGraphics (transient):    호버 타일의 정밀 attack range (Zone A 타일 호버 시)
+apPreviewText:                 호버 타일의 AP 비용 텍스트
+```
+
+Zone A/B/C는 `clearHighlights()` 또는 유닛 재선택 시까지 유지. 호버 attack preview는 매 hover 이벤트에 갱신되며, `clearActionHighlights()`로 소거.
+
+### 호버 동작
+
+- **Zone A 타일 호버**: AP 비용 텍스트 + 해당 위치 기준 정밀 공격 범위 (Zone C의 정확한 subset 명확화)
+- **Zone B 타일 호버**: AP 비용 텍스트만, 공격 범위 미표시
+- **범위 밖 / 맵 외부**: 모든 미리보기 해제
+
+### 구현 위치
+
+| 파일 | 역할 |
+|---|---|
+| `BattleCoordinator.computeAndShowZones()` | Zone A/B/C 계산 및 렌더링 트리거 |
+| `BattleCoordinator.onTileHover()` | 호버 정밀 preview 로직 |
+| `PhaserRenderer.highlightTiles()` | `HighlightMode`별 색상/alpha 관리 |
+| `IRenderer.HighlightMode` | `'move-attack' \| 'move-only' \| 'attack-reach'` 타입 |
+
+### Cancel 시 Facing 화살표 정리 규칙
+
+`onCancel()` 최상단에서 반드시 `renderer.hideFacingSelection()` + `renderer.hideAPPreview()`를 호출해야 합니다. Facing 화살표는 `BattleState`와 무관한 순수 Phaser Graphics 오브젝트이므로, state undo만으로는 소거되지 않습니다.

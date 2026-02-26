@@ -14,7 +14,7 @@ function makeUnit(overrides: Partial<UnitInstance>): UnitInstance {
     x: 0, y: 0, facing: 'S',
     currentAP: 0, maxAP: 5, ct: 0,
     moved: false, acted: false,
-    buffs: [], level: 1,
+    buffs: [], level: 1, exp: 0, equipment: { weapon: null, armor: null, accessory: null },
     skills: [], passiveEffects: [], aiType: 'aggressive',
     ...overrides,
   };
@@ -30,13 +30,14 @@ function makeState(units: UnitInstance[]): BattleState {
     defeatCondition:  { type: 'all_allies_dead' },
   };
   return {
+    gameProject: { manifest: {} as any, units: [], skillsMap: {}, terrainMap: {} },
     mapData,
     units: Object.fromEntries(units.map(u => [u.instanceId, u])),
     turn: 1, phase: 'PLAYER_IDLE',
     selectedUnitId: null, activeUnitId: null, inputMode: 'idle',
     activeSkillId: null, busy: false, actionLog: [],
     stateHistory: [],
-  };
+  } as BattleState;
 }
 
 describe('AIScorer', () => {

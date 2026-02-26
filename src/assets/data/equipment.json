@@ -1,0 +1,47 @@
+{
+  "iron_sword": {
+    "id": "iron_sword", "name": "철검", "desc": "기본적인 검. 근접 전투에 적합하다.",
+    "slot": "weapon", "statBonus": { "atk": 5 }, "tags": ["blade", "phys"], "price": 300
+  },
+  "steel_lance": {
+    "id": "steel_lance", "name": "강철 창", "desc": "튼튼한 강철로 만든 창.",
+    "slot": "weapon", "statBonus": { "atk": 7 }, "tags": ["spear", "phys"], "price": 500,
+    "classRestriction": ["warrior", "soldier", "knight"]
+  },
+  "hunter_bow": {
+    "id": "hunter_bow", "name": "사냥꾼의 활", "desc": "경량 복합궁. 사거리 +1.",
+    "slot": "weapon", "statBonus": { "atk": 4, "skl": 2 }, "rangeBonus": 1,
+    "tags": ["bow", "phys"], "price": 600,
+    "classRestriction": ["archer"]
+  },
+  "oak_staff": {
+    "id": "oak_staff", "name": "참나무 지팡이", "desc": "마력을 증폭시키는 지팡이.",
+    "slot": "weapon", "statBonus": { "atk": 3, "mp": 5 }, "tags": ["staff", "magic"], "price": 450,
+    "classRestriction": ["mage", "cleric"]
+  },
+  "leather_armor": {
+    "id": "leather_armor", "name": "가죽 갑옷", "desc": "가벼운 가죽 방어구.",
+    "slot": "armor", "statBonus": { "def": 3 }, "price": 200
+  },
+  "chain_mail": {
+    "id": "chain_mail", "name": "쇄자 갑옷", "desc": "무거운 사슬 갑옷. 방어력 상승, 속도 감소.",
+    "slot": "armor", "statBonus": { "def": 6, "spd": -1 }, "price": 500
+  },
+  "mage_robe": {
+    "id": "mage_robe", "name": "마법사의 로브", "desc": "마력 보조 로브.",
+    "slot": "armor", "statBonus": { "def": 2, "mp": 4 }, "price": 400,
+    "classRestriction": ["mage", "cleric"]
+  },
+  "swift_boots": {
+    "id": "swift_boots", "name": "신속의 장화", "desc": "이동력 +1.",
+    "slot": "accessory", "statBonus": {}, "movBonus": 1, "price": 800
+  },
+  "power_ring": {
+    "id": "power_ring", "name": "힘의 반지", "desc": "착용자의 공격력을 높인다.",
+    "slot": "accessory", "statBonus": { "atk": 3 }, "price": 600
+  },
+  "guardian_charm": {
+    "id": "guardian_charm", "name": "수호의 부적", "desc": "방어력 +4, HP +5.",
+    "slot": "accessory", "statBonus": { "def": 4, "hp": 5 }, "price": 900
+  }
+}

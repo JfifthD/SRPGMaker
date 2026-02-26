@@ -1,7 +1,17 @@
 import type { Pos } from '@/engine/data/types/Map';
 import type { BattleState } from '@/engine/state/BattleState';
 
-export type HighlightMode = 'move' | 'attack' | 'skill' | 'aoe' | 'selected';
+export type HighlightMode =
+  | 'move'         // legacy single-color move range
+  | 'attack'       // attack target range (action layer)
+  | 'skill'        // skill target range (action layer)
+  | 'aoe'
+  | 'selected'
+  // 3-Zone static overlay (persist layer, shown on unit selection)
+  | 'move-attack'  // Zone A: can move here AND still afford to attack
+  | 'move-only'    // Zone B: can reach but AP too low to attack afterward
+  | 'attack-reach' // Zone C: union of attack tiles reachable from any Zone A position
+  ;
 
 export interface IRenderer {
   // ── Map & Terrain ─────────────────────────────
@@ -15,11 +25,13 @@ export interface IRenderer {
   /** Remove a unit's sprite (on defeat). */
   destroyUnit(unitId: string): void;
 
-  // ── Tile Highlights ────────────────────────────
-  /** Highlight a set of tiles in a given mode (color-coded). */
-  highlightTiles(tiles: Pos[], mode: HighlightMode): void;
+  /** Highlight a set of tiles in a given mode (color-coded). If persist is true, it won't be cleared by clearActionHighlights */
+  highlightTiles(tiles: Pos[], mode: HighlightMode, persist?: boolean): void;
 
-  /** Clear all tile highlights. */
+  /** Clear specific action highlights (attack/skill). */
+  clearActionHighlights(): void;
+
+  /** Clear all tile highlights including move. */
   clearHighlights(): void;
 
   // ── AP & Facing UI ─────────────────────────────

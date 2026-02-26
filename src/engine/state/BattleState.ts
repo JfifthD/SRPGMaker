@@ -5,11 +5,15 @@
 import type { UnitInstance } from '@/engine/data/types/Unit';
 import type { MapData } from '@/engine/data/types/Map';
 import type { BattlePhase } from '@/engine/systems/turn/TurnManager';
+import type { GameProject } from '@/engine/data/types/GameProject';
 
 /** A record of all units by instanceId for O(1) lookup */
 export type UnitMap = Record<string, UnitInstance>;
 
 export interface BattleState {
+  /** The loaded game project (skills, terrains, units data) — immutable reference */
+  readonly gameProject: GameProject;
+
   readonly mapData: MapData;
 
   /** All units (allies + enemies) keyed by instanceId */

@@ -21,17 +21,38 @@ SRPG Maker 엔진의 **코어 전투 엔진** 구성 방식과, AI(MCP) 및 제�
 ## 2. AP (Action Point) 및 행동 경제 코어
 
 유닛의 행동(이동, 공격, 스킬) 횟수를 제어하는 범용 자원 시스템입니다. 엔진 레벨에서는 이 자원을 차감하는 로직만 수행하며, 제약 룰은 주입받습니다.
+본 엔진은 **히트 앤 런(Hit and Run)** 전술을 기본으로 지원하며, 남은 AP가 허용하는 한 턴 내에 여러 번 이동하거나 행동할 수 있습니다.
 
 ### 2-1. AP Configuration (RuleSet)
 
-- `max_ap`: 유닛이 가질 수 있는 최대 AP (유닛 개별 스탯에서 오버라이드 가능).
-- `recovery_per_turn`: 턴 시작 시 일괄 회복되는 기본 AP 양.
-- `allow_split_action`: true일 경우 "이동 후 공격", "공격 후 재이동" 등 세분화된 분할 행동 허용. false일 경우 고전 SRPG처럼 한 번 이동 후 1액션만 허용하고 턴 강제 종료.
+- `max_ap`: 유닛이 가질 수 있는 최대 AP (유닛 개별 스탯, 예를 들어 `AGI`나 전용 `MaxAP` 스탯에서 오버라이드되며 **성장(Level-up) 곡선**을 가집니다).
+- `recovery_per_turn`: 턴 시작 시 일괄 회복되는 기본 AP 양. (기본적으로 시작 시 **Max AP 전체 회복**).
+- `allow_split_action`: true일 경우 "이동 후 공격", "공격 후 재이동" 등 세분화된 분할 행동 허용. (히트 앤 런).
 
-### 2-2. 대기(Wait) 및 이월(Carry-over) 메커니즘
+### 2-2. 대기(Wait) 및 초기화 메커니즘
 
-- `allow_carry_over` (boolean): true인 경우, 유닛이 어떠한 액션도 하지 않고 `Wait` 커맨드를 선택 시 자원(AP)이 다음 턴으로 누적됩니다.
-- 이를 통해 메이커 제작자는 '최대 AP'를 일시적으로 돌파하는 궁극기/오버캐스트 스킬 사용 룰을 엔진 코드 수정 없이 제작할 수 있습니다.
+- **No Carry-over (이월 불가)**: 턴 종료 시(`Wait` 커맨드 선택 등) 사용하지 않고 남은 잔여 AP는 소멸하며, 다음 턴으로 누적되지 않습니다. 매 턴 산뜻하게 초기화된 전략을 짤 수 있도록 템포를 유지합니다.
+- 행동 종료 시점이 "공격 후"가 아닌, "유닛이 명시적으로 턴 종료(Wait)를 선언하거나 AP가 0이 되었을 때"로 정의되어 유연한 AP 활용을 권장합니다.
+
+### 2-3. AP 차감 및 취소(Undo) 보장 — 구현 규칙 (CRITICAL)
+
+AP 차감은 반드시 `MoveAction.execute()` 내부에서 수행되어야 합니다. `GameStore.dispatch(action)`는 실행 전 state를 `stateHistory`에 push하므로, 액션 내부에서 차감해야 완전한 undo가 보장됩니다.
+
+```
+올바른 흐름:
+  State A {AP=5} → dispatch(MoveAction(cost=1)) → execute 내부에서 AP차감
+  stateHistory에 State A {AP=5} push → State B {AP=4, moved=true}
+  cancel → undoUnitMoves → State A 복원 → AP=5 완전 회복 ✅
+
+잘못된 흐름 (금지):
+  State A → dispatchAsync(AP차감) → State B {AP=4} [history 미기록]
+  → dispatch(MoveAction) → stateHistory에 State B {AP=4} push
+  cancel → State B 복원 → AP=4 (원본 손실) ❌
+```
+
+- `BattleCoordinator`에서 `dispatchAsync`로 AP를 선차감하는 패턴은 금지.
+- `MoveAction` 생성자에 `cost: number`를 전달하여 BFS 비용을 액션 내부로 캡슐화.
+- `dispatchAsync`는 `inputMode` 전환 등 undo-불필요 메타데이터 변경에만 사용.
 
 ## 3. 유닛 방향성 (Facing) 및 위치 전술
 

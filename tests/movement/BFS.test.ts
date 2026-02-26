@@ -29,7 +29,7 @@ function makeUnit(x: number, y: number, spd: number, team: 'ally' | 'enemy' = 'a
     x, y, facing: 'S',
     currentAP: spd, maxAP: 5, ct: 0,
     moved: false, acted: false,
-    buffs: [], level: 1,
+    buffs: [], level: 1, exp: 0, equipment: { weapon: null, armor: null, accessory: null },
     skills: [], passiveEffects: [], aiType: 'aggressive',
   };
 }

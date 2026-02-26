@@ -20,6 +20,8 @@ export interface SkillData {
   name: string;
   /** Visual / audio categorisation */
   type: EffectType;
+  /** Particle Visual Effect ID from vfx.json */
+  vfxId?: string;
   target: TargetType;
   /** MP cost to cast */
   mp: number;

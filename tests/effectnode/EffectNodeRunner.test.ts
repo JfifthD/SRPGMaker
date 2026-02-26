@@ -24,7 +24,7 @@ function makeUnit(overrides: Partial<UnitInstance>): UnitInstance {
     x: 3, y: 3, facing: 'S',
     currentAP: 5, maxAP: 5, ct: 0,
     moved: false, acted: false,
-    buffs: [], level: 1,
+    buffs: [], level: 1, exp: 0, equipment: { weapon: null, armor: null, accessory: null },
     aiType: 'aggressive',
     ...overrides,
   };
@@ -34,6 +34,7 @@ function makeState(units: UnitInstance[]): BattleState {
   const unitMap: Record<string, UnitInstance> = {};
   for (const u of units) unitMap[u.instanceId] = u;
   return {
+    gameProject: { manifest: {} as any, units: [], skillsMap: {}, terrainMap: {} },
     mapData: {
       id: 'test', name: 'Test Map', width: 8, height: 8,
       terrain: Array.from({ length: 8 }, () => Array(8).fill('plain')),

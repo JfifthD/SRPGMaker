@@ -56,6 +56,17 @@ export interface GameEventMap {
 
   // Danger Zone
   dangerZoneToggled: { visible: boolean };
+
+  // Dialogue system
+  dialogueStart:  { scriptId: string; mode: 'scenario' | 'battle_overlay' };
+  dialogueEnd:    { scriptId: string };
+  sfxPlay:        { key: string };
+  bgmChange:      { key: string };
+
+  // Campaign flow
+  stageCompleted: { stageId: string };
+  stageSelected:  { stageId: string };
+  campaignSaved:  Record<string, never>;
 }
 
 type Listener<T> = (payload: T) => void;

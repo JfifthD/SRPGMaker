@@ -17,7 +17,7 @@ import { MathUtils } from '@/engine/utils/MathUtils';
 import type { SkillData } from '@/engine/data/types/Skill';
 import type { TerrainKey, TerrainData } from '@/engine/data/types/Terrain';
 import { buildDangerZone } from '@/engine/systems/movement/DangerZoneCalc';
-import type { BFSContext } from '@/engine/systems/movement/BFS';
+import type { BFSContext, ReachableTile } from '@/engine/systems/movement/BFS';
 import terrainJson from '@/assets/data/terrains.json';
 import skillsJson from '@/assets/data/skills.json';
 
@@ -38,8 +38,10 @@ export class BattleCoordinator {
   private renderer: IRenderer;
   
   // Local volatile state mimicking BattleScene's old tracking
-  private moveTiles: Pos[] = [];
+  private moveTiles: ReachableTile[] = [];
+  private zoneATiles: ReachableTile[] = []; // subset of moveTiles where AP >= atkCost after move
   private rangeTiles: Pos[] = [];
+  private hoveredTile: string | null = null;
   private busy = false;
   private lastMoveAnimation: Promise<void> = Promise.resolve();
   private dangerZoneVisible = false;
@@ -66,8 +68,15 @@ export class BattleCoordinator {
         // After move animation completes, if it's still our turn and unit is active:
         const currentState = store.getState();
         if (currentState.phase === 'PLAYER_IDLE' && currentState.activeUnitId === e.unit.instanceId) {
-            // Re-highlight remaining move tiles and pop the Ring Menu open
-            this.handleIdleClick(e.toX, e.toY, currentState);
+            const currentUnit = StateQuery.unit(currentState, e.unit.instanceId);
+
+            // MoveAction sets inputMode='facing' when AP hits 0, so we just need to render it.
+            if (currentState.inputMode === 'facing' && currentUnit) {
+              this.renderer.showFacingSelection(currentUnit.x, currentUnit.y);
+            } else {
+              // AP remains — re-highlight remaining move tiles and re-open Ring Menu
+              this.handleIdleClick(e.toX, e.toY, currentState);
+            }
         }
       }
     });
@@ -84,10 +93,7 @@ export class BattleCoordinator {
       const unit = StateQuery.unit(state, e.activeUnitId);
       if (unit && unit.currentAP > 0) {
         const nodes = await Pathworker.getReachable(unit, state);
-        this.moveTiles = nodes;
-        this.rangeTiles = [];
-        this.renderer.clearHighlights();
-        this.renderer.highlightTiles(this.moveTiles, 'move');
+        this.computeAndShowZones(unit, nodes, state);
       }
       this.broadcastAvailableActions(store.getState());
       // Auto-open Ring Menu for the active unit
@@ -112,10 +118,10 @@ export class BattleCoordinator {
 
     // Movement is intrinsic via clicking tiles; we do not show a literal MOVE button anymore to save visual space.
 
-    // Attack is allowed if they have >= 3 AP
+    // Attack is allowed if they have AP
     payload.push({
-      id: 'attack', label: 'ATTACK', costAP: 3,
-      disabled: unit.acted || unit.currentAP < 3
+      id: 'attack', label: 'ATTACK', costAP: 3, // Base attack cost TODO: fetch from unit/weapon
+      disabled: unit.currentAP < 3
     });
 
     // Skill is a sub-menu in UI, but parent needs to check AP constraints
@@ -125,27 +131,23 @@ export class BattleCoordinator {
            id: skId,
            name: skData?.name || skId,
            ap: skData?.ap || 3,
+           mp: skData?.mp || 0,
+           range: skData?.range || 1,
+           desc: skData?.desc || '',
            canUse: skData && unit.mp >= skData.mp && unit.currentAP >= (skData.ap || 3)
        };
     });
 
     payload.push({
       id: 'skill', label: 'SKILLS', costAP: 0,
-      disabled: unit.acted || unit.skills.length === 0,
+      disabled: unit.skills.length === 0,
       metadata: { skills: unitSkills }
     });
 
-    if (hasActedAtAll) {
-      // End Turn only
-      payload.push({
-        id: 'end', label: 'END TURN', costAP: 0, disabled: false
-      });
-    } else {
-      // Wait (Charge AP)
-      payload.push({
-        id: 'wait', label: 'WAIT (CHARGE)', costAP: 0, disabled: false
-      });
-    }
+    // Wait command (discards remaining AP)
+    payload.push({
+      id: 'wait', label: 'WAIT', costAP: 0, disabled: false
+    });
 
     EventBus.emit('actionMenuUpdate', { actions: payload });
   }
@@ -186,7 +188,37 @@ export class BattleCoordinator {
     if (state.phase === 'ENEMY_PHASE') return;
 
     if (tx < 0 || tx >= state.mapData.width || ty < 0 || ty >= state.mapData.height) {
-      EventBus.emit('combatPreview', { preview: null });
+      this.clearHoverPreview();
+      return;
+    }
+
+    const hoverKey = `${tx},${ty}`;
+    if (this.hoveredTile === hoverKey) return;
+    this.hoveredTile = hoverKey;
+
+    // 'move' mode = active ally with AP > 0 has zone overlay visible.
+    // On hover: show AP cost text + highlight the EXACT attack range from this specific tile
+    // (a precise subset of Zone C which shows the full union). Zone A/B/C persist on moveGraphics.
+    if (state.inputMode === 'move' && state.selectedUnitId && state.activeUnitId === state.selectedUnitId) {
+      const tile = this.moveTiles.find(t => t.x === tx && t.y === ty);
+      const attacker = StateQuery.unit(state, state.selectedUnitId);
+      this.renderer.clearActionHighlights(); // clears only actionGraphics; zone overlay persists
+      if (tile && attacker) {
+        this.renderer.showAPPreview(tx, ty, tile.cost);
+        // If this is a Zone A tile, show the exact attack range from this position (on actionGraphics)
+        const isZoneA = this.zoneATiles.some(t => t.x === tx && t.y === ty);
+        if (isZoneA) {
+          const range = RangeCalc.skillRange(
+            { x: tx, y: ty },
+            { range: attacker.atkRange, aoe: false } as SkillData,
+            state.mapData.width,
+            state.mapData.height,
+          );
+          this.renderer.highlightTiles(range, 'attack'); // non-persist → drawn on actionGraphics only
+        }
+      } else {
+        this.renderer.hideAPPreview();
+      }
       return;
     }
 
@@ -231,12 +263,22 @@ export class BattleCoordinator {
     }
   }
 
+  private clearHoverPreview() {
+    this.hoveredTile = null;
+    this.renderer.hideAPPreview();
+    this.renderer.clearActionHighlights();
+    EventBus.emit('combatPreview', { preview: null });
+  }
+
   onCancel(): void {
     if (this.busy) return;
     const state = store.getState();
     const unit = state.selectedUnitId ? StateQuery.unit(state, state.selectedUnitId) : null;
-    
-    // 1. Force close the Ring Menu visually on any cancel sequence
+    this.hoveredTile = null;
+
+    // 1. Always clean up visual overlays first (facing arrows are purely visual — not part of state)
+    this.renderer.hideFacingSelection();
+    this.renderer.hideAPPreview();
     EventBus.emit('closeRingMenu', {});
 
     // 2. If we were targeting skills or attacks, drop back to idle state without undoing movement
@@ -269,10 +311,7 @@ export class BattleCoordinator {
         : null;
       if (revertedUnit && revertedUnit.currentAP > 0) {
         Pathworker.getReachable(revertedUnit, revertedState).then(nodes => {
-          this.moveTiles = nodes;
-          this.rangeTiles = [];
-          this.renderer.clearHighlights();
-          this.renderer.highlightTiles(this.moveTiles, 'move');
+          this.computeAndShowZones(revertedUnit, nodes, revertedState);
         });
         EventBus.emit('openRingMenu', { unit: revertedUnit, tx: revertedUnit.x, ty: revertedUnit.y });
       } else {
@@ -291,10 +330,12 @@ export class BattleCoordinator {
     // 4. If nothing else, clear everything
     store.clearSelection();
     this.moveTiles = [];
+    this.zoneATiles = [];
     this.rangeTiles = [];
     this.renderer.clearHighlights();
     EventBus.emit('cancelAction', {});
     EventBus.emit('combatPreview', { preview: null });
+    this.hoveredTile = null;
   }
 
   // ── State change handler ──────────────────────────────────
@@ -326,9 +367,7 @@ export class BattleCoordinator {
     if (unit.team === 'ally' && unit.instanceId === state.activeUnitId) {
       if (unit.currentAP > 0) {
         Pathworker.getReachable(unit, state).then(nodes => {
-          this.moveTiles = nodes;
-          this.renderer.clearHighlights();
-          this.renderer.highlightTiles(this.moveTiles, 'move');
+          this.computeAndShowZones(unit, nodes, state);
         });
       }
       // Ring menu anchor event for UI
@@ -338,25 +377,34 @@ export class BattleCoordinator {
     } else {
       this.moveTiles = [];
       this.renderer.clearHighlights();
-      this.renderer.highlightTiles([{x: unit.x, y: unit.y}], 'selected');
+      this.renderer.highlightTiles([{x: unit.x, y: unit.y}], 'selected', true);
       EventBus.emit('closeRingMenu', {});
+      this.hoveredTile = null;
     }
   }
 
   private handleMoveClick(tx: number, ty: number, state: BattleState): void {
     const unit = StateQuery.unit(state, state.selectedUnitId!);
     if (!unit) return;
-    
+
     const clicked = StateQuery.at(state, tx, ty);
     const inRange = this.moveTiles.some(t => t.x === tx && t.y === ty);
-    
+
     if (inRange && !(clicked && clicked.instanceId !== state.selectedUnitId)) {
         EventBus.emit('closeRingMenu', {});
         // Find path asynchronously
         Pathworker.getPath({x: unit.x, y: unit.y}, {x: tx, y: ty}, unit, state).then(path => {
           this.renderer.clearHighlights();
+          this.renderer.hideAPPreview();
+          const targetTile = this.moveTiles.find(t => t.x === tx && t.y === ty);
+          const moveCost = targetTile?.cost ?? 0;
           this.moveTiles = [];
-          store.dispatch(new MoveAction(unit.instanceId, {x: tx, y: ty}, path || [{x: tx, y: ty}]));
+          this.hoveredTile = null;
+
+          // Pass cost into MoveAction so AP deduction is tracked inside stateHistory.
+          // This guarantees full AP restoration on cancel/undo.
+          store.dispatch(new MoveAction(unit.instanceId, {x: tx, y: ty}, path || [{x: tx, y: ty}], moveCost));
+          // Facing UI is shown after animation completes in the 'unitMoved' event listener.
         });
     } else if (clicked) {
         this.handleIdleClick(tx, ty, state);
@@ -384,6 +432,18 @@ export class BattleCoordinator {
     this.rangeTiles = [];
     this.renderer.clearHighlights();
     this.busy = false;
+
+    // Auto-end turn if unit is dead or out of AP
+    const postState = store.getState();
+    const attacker = StateQuery.unit(postState, attackerId);
+    if (!attacker || attacker.hp <= 0 || attacker.currentAP <= 0) {
+      EventBus.emit('closeRingMenu', {});
+      this.endTurn();
+    } else {
+      setTimeout(() => {
+        this.handleIdleClick(attacker.x, attacker.y, store.getState());
+      }, 0);
+    }
   }
 
   private handleSkillTargetClick(tx: number, ty: number, state: BattleState): void {
@@ -448,6 +508,18 @@ export class BattleCoordinator {
     this.rangeTiles = [];
     this.renderer.clearHighlights();
     this.busy = false;
+
+    // Auto-end turn if unit is dead or out of AP
+    const postState = store.getState();
+    const caster2 = StateQuery.unit(postState, casterId);
+    if (!caster2 || caster2.hp <= 0 || caster2.currentAP <= 0) {
+      EventBus.emit('closeRingMenu', {});
+      this.endTurn();
+    } else {
+      setTimeout(() => {
+        this.handleIdleClick(caster2.x, caster2.y, store.getState());
+      }, 0);
+    }
   }
 
   // ── Public API for UI ──────────────────────────────────────
@@ -517,16 +589,69 @@ export class BattleCoordinator {
     }
   }
 
+  // ── 3-Zone Static Overlay ─────────────────────────────────
+
+  /**
+   * Compute and render the 3-zone reachability overlay for an active ally unit.
+   *
+   * Zone A (teal)       — can move here AND still afford to attack (remainingAP >= atkCost)
+   * Zone B (dim blue)   — can reach but not enough AP to attack afterward
+   * Zone C (dark red)   — union of attack tiles reachable from any Zone A position
+   *
+   * Drawn back-to-front on the persist (moveGraphics) layer so Zone A always reads on top.
+   */
+  private computeAndShowZones(
+    unit: import('@/engine/data/types/Unit').UnitInstance,
+    reachable: ReachableTile[],
+    state: BattleState,
+  ): void {
+    const atkCost = 3; // must match broadcastAvailableActions cost; TODO: from unit/weapon data
+
+    const zoneA = reachable.filter(t => unit.currentAP - t.cost >= atkCost);
+    const zoneB = reachable.filter(t => unit.currentAP - t.cost < atkCost);
+
+    // Zone C: union of attack tiles from all Zone A positions, excluding the movement zone itself
+    const movePosSet = new Set(reachable.map(t => `${t.x},${t.y}`));
+    const zoneCSet = new Set<string>();
+    for (const tile of zoneA) {
+      RangeCalc.skillRange(
+        { x: tile.x, y: tile.y },
+        { range: unit.atkRange, aoe: false } as SkillData,
+        state.mapData.width,
+        state.mapData.height,
+      ).forEach(t => {
+        const key = `${t.x},${t.y}`;
+        if (!movePosSet.has(key)) zoneCSet.add(key);
+      });
+    }
+    const zoneC: Pos[] = [];
+    for (const key of zoneCSet) {
+      const parts = key.split(',');
+      zoneC.push({ x: parseInt(parts[0]!, 10), y: parseInt(parts[1]!, 10) });
+    }
+
+    this.zoneATiles = zoneA;
+    this.moveTiles  = reachable;
+    this.rangeTiles = [];
+
+    this.renderer.clearHighlights();
+    // Back-to-front: Zone C first so A sits on top visually
+    if (zoneC.length > 0) this.renderer.highlightTiles(zoneC, 'attack-reach', true);
+    if (zoneB.length > 0) this.renderer.highlightTiles(zoneB, 'move-only',    true);
+    if (zoneA.length > 0) this.renderer.highlightTiles(zoneA, 'move-attack',  true);
+  }
+
   async endTurn(): Promise<void> {
     if (this.busy) return;
     // Clear selection WITHOUT undo — End Turn always commits the current state.
     // (onCancel() would undo a pending move if unit.moved && !unit.acted)
     store.clearSelection();
     this.moveTiles = [];
+    this.zoneATiles = [];
     this.rangeTiles = [];
     this.renderer.clearHighlights();
-    EventBus.emit('cancelAction', {});
     EventBus.emit('combatPreview', { preview: null });
+    this.hoveredTile = null;
     store.nextTurn();
     // onStateChange fires synchronously from nextTurn and handles runEnemyPhase.
 
@@ -582,7 +707,7 @@ export class BattleCoordinator {
       // Show enemy movement range briefly so the player can see what's coming
       const reachable = await Pathworker.getReachable(enemy, state);
       if (reachable.length > 0) {
-        this.renderer.highlightTiles(reachable, 'move');
+        this.renderer.highlightTiles(reachable, 'move', true);
         await new Promise(r => setTimeout(r, 600));
         this.renderer.clearHighlights();
       }

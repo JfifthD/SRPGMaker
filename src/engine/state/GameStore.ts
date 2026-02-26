@@ -16,6 +16,8 @@ import { BuffSystem } from '@/engine/systems/skill/BuffSystem';
 import { EventBus } from '@/engine/utils/EventBus';
 import { StateQuery } from './BattleState';
 import { Logger } from '@/engine/utils/Logger';
+import { StageConditionSystem } from '@/engine/systems/stage/StageConditionSystem';
+import { SaveManager } from '@/engine/systems/save/SaveManager';
 
 type StoreListener = (state: BattleState) => void;
 
@@ -48,6 +50,7 @@ export class GameStore {
     }
 
     this.state = {
+      gameProject,
       mapData,
       units,
       turn: 1,
@@ -62,11 +65,32 @@ export class GameStore {
     };
 
     this.turnManager.reset();
+    this._gameId = gameProject.manifest.id;
     Logger.log('⚔ Chronicle of Shadows', 'system');
     Logger.log('Turn 1 — Player Phase', 'system');
   }
 
   getState(): BattleState { return this.state; }
+
+  /**
+   * Restore a previously saved BattleState snapshot.
+   * Requires the GameProject to reconstruct the full state.
+   */
+  restore(snapshot: Parameters<typeof SaveManager.restoreState>[0], gameProject: GameProject): void {
+    this.state = SaveManager.restoreState(snapshot, gameProject);
+    this.turnManager.reset();
+    // Sync TurnManager to the restored phase
+    if (this.state.phase === 'PLAYER_IDLE' || this.state.phase === 'VICTORY' || this.state.phase === 'DEFEAT') {
+      this.turnManager.transition(this.state.phase);
+    } else if (this.state.phase === 'ENEMY_PHASE') {
+      this.turnManager.transition('ENEMY_PHASE');
+    }
+    Logger.log(`🔄 Save restored — Turn ${this.state.turn}`, 'system');
+    this.notify();
+  }
+
+  /** Auto-save game ID for persistence (set during init) */
+  private _gameId: string = 'unknown';
 
   /** Dispatch a Command action and notify listeners */
   dispatch(action: GameAction): void {
@@ -84,6 +108,7 @@ export class GameStore {
 
     this.notify();
     this.checkWin();
+    this.scheduleAutoSave();
   }
 
   /** Advance time until the next unit's turn (CT >= 100) */
@@ -112,8 +137,8 @@ export class GameStore {
       activeUnit.acted = false;
       activeUnit.ct -= 100;
 
-      // AP Recovery (Accumulates for Charge mechanics)
-      activeUnit.currentAP += activeUnit.maxAP;
+      // AP Refresh: Full AP restoration at the start of the turn (No carryover)
+      activeUnit.currentAP = activeUnit.maxAP;
 
       // Tick buffs for this unit only now
       draft.units[readyUnitId] = BuffSystem.tick(activeUnit);
@@ -239,31 +264,50 @@ export class GameStore {
 
   /** Get a compatible BFSContext representing the current grid snapshot. */
   getBFSContext() {
+    const terrainMap = this.state.gameProject.terrainMap;
+    const defaultTerrain = terrainMap['plain'];
     return {
       width: this.state.mapData.width,
       height: this.state.mapData.height,
       getTerrain: (x: number, y: number) => {
          const key = this.state.mapData.terrain[y]?.[x] ?? 'plain';
-         // Avoid pulling full terrain.json by duplicating plain properties for out of bounds
-         // Actually, let's just make it simple since RangeCalc isn't in store.
-         return { moveCost: 1, passable: true } as any; 
+         return terrainMap[key] ?? defaultTerrain ?? { moveCost: 1, passable: true } as any;
       },
       getUnit: (x: number, y: number) => StateQuery.at(this.state, x, y),
     };
   }
 
+  /**
+   * Schedule a non-blocking auto-save after a state change.
+   * Uses requestIdleCallback where available, setTimeout(0) as fallback.
+   */
+  private scheduleAutoSave(): void {
+    // Don't save terminal states or during animation
+    if (this.state.phase === 'VICTORY' || this.state.phase === 'DEFEAT') return;
+    const doSave = () => {
+      SaveManager.save('autosave', this.state, this._gameId);
+    };
+    if (typeof requestIdleCallback === 'function') {
+      requestIdleCallback(doSave);
+    } else {
+      setTimeout(doSave, 0);
+    }
+  }
+
   private checkWin(): void {
-    if (StateQuery.liveEnemies(this.state).length === 0) {
+    const result = StageConditionSystem.evaluate(this.state);
+
+    if (result === 'VICTORY') {
       this.state = produce(this.state, draft => { draft.phase = 'VICTORY'; });
       this.turnManager.transition('VICTORY');
       EventBus.emit('victory', { turn: this.state.turn });
       Logger.log(`✨ VICTORY — Turn ${this.state.turn}`, 'critical');
       this.notify();
-    } else if (StateQuery.liveAllies(this.state).length === 0) {
+    } else if (result === 'DEFEAT') {
       this.state = produce(this.state, draft => { draft.phase = 'DEFEAT'; });
       this.turnManager.transition('DEFEAT');
       EventBus.emit('defeat', { turn: this.state.turn });
-      Logger.log('💀 DEFEAT — All allies fallen', 'critical');
+      Logger.log('💀 DEFEAT', 'critical');
       this.notify();
     }
   }

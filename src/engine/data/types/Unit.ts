@@ -4,12 +4,25 @@
 
 import type { DamageType } from './Skill';
 import type { EffectNode } from './EffectNode';
+import type { EquipmentSlots } from './Equipment';
 
 export type AffinityType = DamageType;
 export type TeamType = 'ally' | 'enemy';
 
 /** Behavioral archetype for enemy AI decision-making */
-export type AIType = 'aggressive' | 'defensive' | 'support';
+export type AIType = 'aggressive' | 'defensive' | 'support' | 'hit_and_run' | 'boss' | 'patrol';
+
+/** Extended AI configuration per unit (optional) */
+export interface AIConfig {
+  /** Detection radius — only act when enemies within this range */
+  detectRange?: number;
+  /** Fixed guard position (defensive/boss) */
+  guardTile?: { x: number; y: number };
+  /** Patrol waypoints (patrol) */
+  patrolPath?: { x: number; y: number }[];
+  /** Target selection priority */
+  targetPriority?: 'nearest' | 'weakest' | 'strongest' | 'healer_first';
+}
 
 export interface UnitStats {
   hp: number;
@@ -18,6 +31,7 @@ export interface UnitStats {
   def: number;
   spd: number;
   skl: number;
+  maxAP?: number;
 }
 
 export type StatKey = keyof UnitStats;
@@ -45,6 +59,8 @@ export interface UnitData {
   passiveEffects?: EffectNode[];
   /** AI behavioral archetype — governs target priority and action selection */
   aiType?: AIType;
+  /** Extended AI configuration */
+  aiConfig?: AIConfig;
 }
 
 /** Active buff/debuff on a unit */
@@ -107,8 +123,16 @@ export interface UnitInstance {
   // Level (for future growth system)
   level: number;
 
+  /** Accumulated experience points */
+  exp: number;
+
   /** AI behavioral personality (enemies only) */
   aiType: AIType;
+  /** Extended AI configuration */
+  aiConfig?: AIConfig;
+
+  /** Equipped items */
+  equipment: EquipmentSlots;
 }
 
 /** Creates a UnitInstance from UnitData with a given spawn position */
@@ -138,7 +162,7 @@ export function createUnit(data: UnitData, x: number, y: number): UnitInstance {
     facing: 'S', // Default facing south
 
     currentAP: 0,
-    maxAP: 5, // Default max AP
+    maxAP: data.baseStats.maxAP ?? 5, // Default max AP
     ct: 0,
 
     moved: false,
@@ -146,12 +170,17 @@ export function createUnit(data: UnitData, x: number, y: number): UnitInstance {
 
     buffs: [],
     level: 1,
+    exp: 0,
     passiveEffects: data.passiveEffects ? [...data.passiveEffects] : [],
     aiType: data.aiType ?? 'aggressive',
+    equipment: { weapon: null, armor: null, accessory: null },
   };
   
   if (data.trait) {
     unit.trait = data.trait;
+  }
+  if (data.aiConfig) {
+    unit.aiConfig = { ...data.aiConfig };
   }
   
   return unit;

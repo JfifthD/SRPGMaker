@@ -1,0 +1,66 @@
+[
+  {
+    "id": "slash",
+    "name": "Standard Physics Slash",
+    "durationMs": 300,
+    "particle": {
+      "texture": "particle_flare",
+      "scale": { "start": 0.5, "end": 0.1 },
+      "alpha": { "start": 1, "end": 0 },
+      "speed": { "min": 200, "max": 400 },
+      "angle": { "min": -30, "max": 30 },
+      "lifespan": 150,
+      "quantity": 10,
+      "blendMode": "ADD",
+      "tint": 16777215
+    }
+  },
+  {
+    "id": "hit",
+    "name": "Generic Impact",
+    "durationMs": 200,
+    "particle": {
+      "texture": "particle_flare",
+      "scale": { "start": 0.2, "end": 0.8 },
+      "alpha": { "start": 1, "end": 0 },
+      "speed": 0,
+      "lifespan": 200,
+      "quantity": 3,
+      "blendMode": "ADD",
+      "tint": 16711680
+    }
+  },
+  {
+    "id": "heal",
+    "name": "Healing Magic",
+    "durationMs": 800,
+    "particle": {
+      "texture": "particle_flare",
+      "scale": { "start": 0.8, "end": 0.2 },
+      "alpha": { "start": 1, "end": 0 },
+      "speed": { "min": 50, "max": 100 },
+      "angle": { "min": -135, "max": -45 },
+      "gravityY": -100,
+      "lifespan": 600,
+      "quantity": 4,
+      "blendMode": "ADD",
+      "tint": 65280
+    }
+  },
+  {
+    "id": "buff",
+    "name": "Stat Boost",
+    "durationMs": 600,
+    "particle": {
+      "texture": "particle_flare",
+      "scale": { "start": 0.3, "end": 0.8 },
+      "alpha": { "start": 1, "end": 0 },
+      "speed": { "min": 0, "max": 0 },
+      "angle": 0,
+      "lifespan": 600,
+      "quantity": 1,
+      "blendMode": "ADD",
+      "tint": 16766720
+    }
+  }
+]

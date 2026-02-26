@@ -1,0 +1,120 @@
+{
+  "soldier": {
+    "id": "soldier", "name": "병사", "desc": "기본 보병. 균형 잡힌 능력치.",
+    "tier": 1,
+    "statMod": { "hp": 2, "atk": 1, "def": 1 },
+    "learnableSkills": [
+      { "skillId": "thrust", "requiredLevel": 1 },
+      { "skillId": "guard", "requiredLevel": 5 }
+    ],
+    "promotionTargets": [
+      { "jobId": "knight", "requiredLevel": 10 },
+      { "jobId": "halberdier", "requiredLevel": 10, "requiredItems": ["promotion_crest"] }
+    ],
+    "equipTags": ["blade", "spear", "light_armor"],
+    "growthMod": { "hp": 5, "def": 5 }
+  },
+  "knight": {
+    "id": "knight", "name": "기사", "desc": "중장 기사. 높은 방어력과 HP.",
+    "tier": 2,
+    "statMod": { "hp": 5, "atk": 2, "def": 4, "spd": -1 },
+    "learnableSkills": [
+      { "skillId": "shield_bash", "requiredLevel": 1 },
+      { "skillId": "fortress", "requiredLevel": 5 },
+      { "skillId": "last_stand", "requiredLevel": 10 }
+    ],
+    "promotionTargets": [
+      { "jobId": "paladin", "requiredLevel": 15, "requiredItems": ["holy_crest"] }
+    ],
+    "equipTags": ["blade", "spear", "heavy_armor", "shield"],
+    "growthMod": { "hp": 10, "def": 10, "spd": -5 }
+  },
+  "halberdier": {
+    "id": "halberdier", "name": "미늘창병", "desc": "창 특화 전사. 사거리와 회피가 강점.",
+    "tier": 2,
+    "statMod": { "hp": 3, "atk": 3, "spd": 2 },
+    "learnableSkills": [
+      { "skillId": "lunge", "requiredLevel": 1 },
+      { "skillId": "sweep", "requiredLevel": 5 },
+      { "skillId": "dragon_rush", "requiredLevel": 12 }
+    ],
+    "equipTags": ["spear", "light_armor"],
+    "growthMod": { "atk": 10, "spd": 10 }
+  },
+  "archer": {
+    "id": "archer", "name": "궁수", "desc": "원거리 물리 딜러.",
+    "tier": 1,
+    "statMod": { "atk": 1, "skl": 2 },
+    "learnableSkills": [
+      { "skillId": "a_shot", "requiredLevel": 1 },
+      { "skillId": "a_rain", "requiredLevel": 5 }
+    ],
+    "promotionTargets": [
+      { "jobId": "sniper", "requiredLevel": 10 }
+    ],
+    "equipTags": ["bow", "light_armor"],
+    "growthMod": { "skl": 10 }
+  },
+  "sniper": {
+    "id": "sniper", "name": "저격수", "desc": "극한의 명중과 사거리.",
+    "tier": 2,
+    "statMod": { "atk": 3, "skl": 5, "spd": 1 },
+    "learnableSkills": [
+      { "skillId": "headshot", "requiredLevel": 1 },
+      { "skillId": "overwatch", "requiredLevel": 8 }
+    ],
+    "equipTags": ["bow", "light_armor"],
+    "growthMod": { "atk": 5, "skl": 15 }
+  },
+  "mage": {
+    "id": "mage", "name": "마법사", "desc": "원거리 마법 딜러.",
+    "tier": 1,
+    "statMod": { "mp": 3, "atk": 1 },
+    "learnableSkills": [
+      { "skillId": "m_fire", "requiredLevel": 1 },
+      { "skillId": "m_frost", "requiredLevel": 3 },
+      { "skillId": "m_blast", "requiredLevel": 7 }
+    ],
+    "promotionTargets": [
+      { "jobId": "archmage", "requiredLevel": 10 }
+    ],
+    "equipTags": ["staff", "robe"],
+    "growthMod": { "mp": 10, "skl": 5 }
+  },
+  "archmage": {
+    "id": "archmage", "name": "대마법사", "desc": "극강의 마력. 광역 마법 특화.",
+    "tier": 2,
+    "statMod": { "mp": 5, "atk": 4, "skl": 3, "def": -1 },
+    "learnableSkills": [
+      { "skillId": "meteor", "requiredLevel": 1 },
+      { "skillId": "time_stop", "requiredLevel": 10 }
+    ],
+    "equipTags": ["staff", "robe"],
+    "growthMod": { "mp": 15, "atk": 10, "skl": 10 }
+  },
+  "cleric": {
+    "id": "cleric", "name": "성직자", "desc": "힐/버프 지원 전문.",
+    "tier": 1,
+    "statMod": { "mp": 2, "def": 1 },
+    "learnableSkills": [
+      { "skillId": "c_heal", "requiredLevel": 1 },
+      { "skillId": "c_mass", "requiredLevel": 5 }
+    ],
+    "promotionTargets": [
+      { "jobId": "bishop", "requiredLevel": 10 }
+    ],
+    "equipTags": ["staff", "robe", "light_armor"],
+    "growthMod": { "mp": 10, "def": 5 }
+  },
+  "bishop": {
+    "id": "bishop", "name": "주교", "desc": "상위 지원 직업. 강력한 힐과 부활.",
+    "tier": 2,
+    "statMod": { "mp": 4, "def": 2, "skl": 3 },
+    "learnableSkills": [
+      { "skillId": "resurrection", "requiredLevel": 1 },
+      { "skillId": "holy_barrier", "requiredLevel": 8 }
+    ],
+    "equipTags": ["staff", "robe", "light_armor"],
+    "growthMod": { "mp": 15, "skl": 10 }
+  }
+}

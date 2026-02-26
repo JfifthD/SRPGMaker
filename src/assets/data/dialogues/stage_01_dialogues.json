@@ -1,0 +1,30 @@
+[
+  {
+    "id": "ch01_battle_start",
+    "mode": "battle_overlay",
+    "lines": [
+      {
+        "type": "line",
+        "speaker": "kael",
+        "emotion": "angry",
+        "side": "left",
+        "text": "Shadow soldiers — they're already here! Hold the line!"
+      },
+      {
+        "type": "line",
+        "speaker": "lyra",
+        "emotion": "determined",
+        "side": "right",
+        "text": "Spread out! Don't let them corner us — stay in formation!"
+      },
+      {
+        "type": "line",
+        "speaker": "kael",
+        "emotion": "determined",
+        "side": "left",
+        "text": "We push through. For Aldora."
+      },
+      { "type": "end" }
+    ]
+  }
+]

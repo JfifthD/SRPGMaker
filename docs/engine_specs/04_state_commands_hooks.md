@@ -132,7 +132,7 @@ Engine.hook.on("onBeforeDamage", (draftState, eventStr, ctx) => {
   "ap_economy": {
     "max_ap": 5,
     "recovery_per_turn": 5,
-    "allow_carry_over": true,
+    "allow_carry_over": false,
     "cost_move_per_tile": 1,
     "cost_attack": 3,
     "cost_skill_default": 3
