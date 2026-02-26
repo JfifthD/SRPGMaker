@@ -23,6 +23,9 @@ export interface WorkerRequest {
   // Extra config for path finding
   startPos?: Pos;
   goalPos?: Pos;
+
+  // Override movement budget (currentAP + equipment movBonus)
+  movBudget?: number;
 }
 
 export interface WorkerResponse {
@@ -53,7 +56,8 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
 
 function calcReachable(req: WorkerRequest): ReachableTile[] {
   const { unit, mapWidth, mapHeight, terrainData, unitMap } = req;
-  const maxCost = unit.currentAP;
+  // Use movBudget if provided (equipment movBonus already added by PathfindingWorkerClient)
+  const maxCost = req.movBudget ?? unit.currentAP;
   const visited = new Map<string, number>();
   const queue: ReachableTile[] = [{ x: unit.x, y: unit.y, cost: 0 }];
   const result: ReachableTile[] = [];

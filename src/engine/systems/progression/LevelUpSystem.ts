@@ -105,12 +105,12 @@ export function processLevelUp(
     }
   }
 
-  // Blessed level-up: guarantee at least 1 stat gain
+  // Blessed level-up: guarantee at least 1 PRIMARY stat gain (excludes maxAP)
   if (totalGains === 0) {
-    // Pick the stat with the highest growth rate
-    let bestKey = statKeys[0]!;
-    let bestRate = 0;
-    for (const key of statKeys) {
+    const primaryKeys: (keyof StatGain)[] = ['hp', 'atk', 'def', 'spd', 'skl', 'mp'];
+    let bestKey: keyof StatGain = 'hp';
+    let bestRate = -1;
+    for (const key of primaryKeys) {
       const rate = growth[key] ?? 0;
       if (rate > bestRate) {
         bestRate = rate;

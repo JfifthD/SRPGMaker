@@ -22,6 +22,7 @@ export interface GameEventMap {
   unitDebuffed:  { unit: UnitInstance; stat: string; val: number; dur: number };
   unitDefeated:  { unit: UnitInstance };
   unitSelected:  { unit: UnitInstance | null };
+  unitLeveledUp: { unitId: string; levelUps: Array<{ previousLevel: number; newLevel: number; gains: Record<string, number> }> };
 
   // Combat UI
   combatPreview: { preview: CombatPreview | null; target?: UnitInstance };
