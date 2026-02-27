@@ -37,7 +37,9 @@ function makeLine(type: DialogueLine['type'], extra: Partial<DialogueLine> = {})
 }
 
 function makeScript(id: string, lines: DialogueLine[], branches?: DialogueScript['branches']): DialogueScript {
-  return { id, mode: 'battle_overlay', lines, branches };
+  const script: DialogueScript = { id, mode: 'battle_overlay', lines };
+  if (branches !== undefined) script.branches = branches;
+  return script;
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────

@@ -45,6 +45,12 @@ export class InputHandler {
       this.coordinator.onCancel();
     });
 
+    // Z key: undo last move (same as ESC/Right-click cancel)
+    const keyZ = kb.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
+    keyZ.on('down', () => {
+      this.coordinator.onCancel();
+    });
+
     // D key: toggle danger zone heatmap
     const keyD = kb.addKey(Phaser.Input.Keyboard.KeyCodes.D);
     keyD.on('down', () => {

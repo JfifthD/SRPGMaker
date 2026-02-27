@@ -22,6 +22,7 @@ function makeUnit(overrides: Partial<UnitInstance> = {}): UnitInstance {
     x: 0, y: 0, facing: 'S',
     currentAP: 5, maxAP: 5, ct: 0,
     moved: false, acted: false, buffs: [], level: 1, exp: 0,
+    aiType: 'aggressive',
     equipment: { weapon: null, armor: null, accessory: null },
     ...overrides,
   };
@@ -47,7 +48,7 @@ const testEquipMap: Record<string, EquipmentData> = {
   fire_ring: {
     id: 'fire_ring', name: 'Fire Ring', desc: 'Fire boost',
     slot: 'accessory', statBonus: {},
-    passiveEffects: [{ name: 'FireBoost', type: 'DamageBoost', trigger: 'OnActiveUse', target: 'Self', conditions: [], payload: { stat: 'atk', amount: 10 }, priority: 10 }],
+    passiveEffects: [{ name: 'FireBoost', type: 'DamageBoost', trigger: 'OnActiveUse', target: 'Self', conditions: [], payload: { buff: { stat: 'atk', val: 10, dur: 1 } }, priority: 10 }],
     price: 1500,
   },
 };
