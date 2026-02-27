@@ -24,6 +24,7 @@ When making structural changes, update both the target doc AND this index.
 | irenderer, renderer abstraction, swap engine                                                                            | `docs/todo/implement-irenderer.md`                                                          | IRenderer interface layer task                                          |
 | graphics, upgrade, sprite, animation, hd-2d, spine, pixellab, vfx, tile, asset pipeline                                 | `docs/todo/graphics-upgrade.md`                                                             | Graphics upgrade roadmap                                                |
 | balance, stats, numeric, damage formula, ap economy, affinity, critical, scaling                                        | `games/chronicle-of-shadows/docs/balance_tables.md`                                         | Master sheet for all numeric balance, stats, and formulas (sample game) |
+| integration test, e2e test, headless test, balance test, api-driven test, buildStore, NullRenderer, deterministic damage | `docs/engine_specs/20_integration_test_guide.md`                                            | Headless dispatch-based test infra: architecture, balance verification workflow, all test file descriptions |
 | audio, sound, bgm, sfx, music, spatial audio, volume ducking                                                            | `docs/engine_specs/07_audio_framework.md`                                                   | Audio architecture, BGM/SFX asset list, spatial audio                   |
 | narrative, story, lore, world, characters, factions, affinity, choices                                                  | `games/chronicle-of-shadows/docs/world_narrative.md`                                        | World lore, character profiles, synopsis (sample game)                  |
 | tutorial, onboarding, learning curve, help, undo, tips                                                                  | `games/chronicle-of-shadows/docs/tutorial_onboarding.md`                                    | Phased learning curve design (sample game)                              |
@@ -55,7 +56,10 @@ When making structural changes, update both the target doc AND this index.
 | Data types             | `src/engine/data/types/`                                           |
 | Game project loader    | `src/engine/loader/GameProjectLoader.ts`                           |
 | Sample game data       | `games/chronicle-of-shadows/data/`                                 |
-| Tests                  | `tests/` (mirrors `src/engine/systems/`)                           |
+| Unit tests             | `tests/<system>/` (mirrors `src/engine/systems/`)                  |
+| Integration tests      | `tests/integration/` — headless battle simulation, balance harness |
+| Test helpers           | `tests/integration/helpers.ts` — `buildStore()`, `makeUnitData()`  |
+| Headless renderer      | `src/engine/renderer/NullRenderer.ts` — IRenderer no-op stub       |
 
 ## Usage
 
