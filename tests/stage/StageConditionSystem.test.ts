@@ -31,7 +31,7 @@ function makeState(
   const unitMap: Record<string, UnitInstance> = {};
   for (const u of units) unitMap[u.instanceId] = u;
   return {
-    gameProject: { manifest: {} as any, units: [], skillsMap: {}, terrainMap: {} },
+    gameProject: { manifest: {} as any, units: [], skillsMap: {}, terrainMap: {}, equipmentMap: {}, jobsMap: {} },
     mapData: {
       id: 'test', name: 'Test', width: 10, height: 10,
       terrain: Array.from({ length: 10 }, () => Array(10).fill('plain')),

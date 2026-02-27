@@ -23,6 +23,8 @@ const stubGameProject: GameProject = {
   units: [],
   skillsMap: skillsJson as unknown as Record<string, SkillData>,
   terrainMap: Object.fromEntries((terrainsJson as unknown as TerrainData[]).map(t => [t.key, t])),
+  equipmentMap: {},
+  jobsMap: {},
 };
 
 // Import after mock is in place

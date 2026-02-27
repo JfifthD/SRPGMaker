@@ -30,7 +30,7 @@ function makeState(units: UnitInstance[]): BattleState {
     defeatCondition:  { type: 'all_allies_dead' },
   };
   return {
-    gameProject: { manifest: {} as any, units: [], skillsMap: {}, terrainMap: {} },
+    gameProject: { manifest: {} as any, units: [], skillsMap: {}, terrainMap: {}, equipmentMap: {}, jobsMap: {} },
     mapData,
     units: Object.fromEntries(units.map(u => [u.instanceId, u])),
     turn: 1, phase: 'PLAYER_IDLE',

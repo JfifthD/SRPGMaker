@@ -9,7 +9,10 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['src/engine/systems/**'],
+      include: [
+        'src/engine/systems/**',
+        'src/engine/state/actions/**',
+      ],
     },
   },
   resolve: {

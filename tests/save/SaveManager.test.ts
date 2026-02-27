@@ -25,6 +25,8 @@ const stubGameProject: GameProject = {
   units: [],
   skillsMap: {},
   terrainMap: {},
+  equipmentMap: {},
+  jobsMap: {},
 };
 
 function makeState(): BattleState {
