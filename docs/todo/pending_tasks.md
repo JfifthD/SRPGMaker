@@ -44,7 +44,7 @@
 
 - [x] `LevelUpSystem.ts` 구현 — EXP 계산, 성장률 기반 스탯 증가, 최소 보장 로직
 - [x] `UnitInstance`에 `exp` 필드 추가
-- [ ] `ResultScene` 연동 — 전투 후 EXP 분배 + 레벨업 연출 (씬 레이어 연결 예정)
+- [x] `ResultScene` 연동 — 전투 후 EXP 분배 + 레벨업 패널 표시 (`distributeStageEXP` → store dispatch → levelup panel) ✅ 2026-02-27
 - [x] 유닛 데이터에 `growthRates`/`baseStats` 확인 완료
 - [x] 테스트: `tests/progression/LevelUpSystem.test.ts` (16 tests)
 
@@ -55,8 +55,8 @@
 - [x] `EquipmentData` 타입 + `equipment.json` (10개 아이템)
 - [x] `EquipmentSystem.ts` — 장착/해제/최종 스탯 계산/패시브 수집
 - [x] `UnitInstance.equipment` 슬롯 추가
-- [ ] `DamageCalc`에 장비 스탯 보정 연동 (전투 시스템 연결 예정)
-- [ ] `BFS movRange`에 장비 이동력 보정 반영 (전투 시스템 연결 예정)
+- [x] `DamageCalc`에 장비 스탯 보정 연동 — `AttackAction` + `SkillAction` + `BattleCoordinator` preview ✅ 2026-02-27
+- [x] `BFS movRange`에 장비 이동력 보정 반영 — `PathfindingWorkerClient` movBudget + `AStarWorker` override ✅ 2026-02-27
 - [x] 테스트: `tests/equipment/EquipmentSystem.test.ts` (11 tests)
 
 ### 5-3. 클래스 트리 및 전직 (Job System) ✅
@@ -65,7 +65,7 @@
 
 - [x] `JobData` 타입 + `jobs.json` (9개 직업, 2 티어)
 - [x] `JobSystem.ts` — 전직/스킬 계승/성장률 보정/아이템 소모
-- [ ] 전직 UI (ResultScene 또는 별도 Camp Scene — 씬 레이어 연결 예정)
+- [x] 전직 UI — `ResultScene` 레벨업 패널 이후 promotable 유닛 순차 표시 (PROMOTE/SKIP) ✅ 2026-02-27
 - [x] 성장률 보정 (`getModifiedGrowth`)
 - [x] 테스트: `tests/progression/JobSystem.test.ts` (15 tests)
 
@@ -147,8 +147,8 @@
 | 12  | `dynamic_stage_conditions.md` — 승패 조건   | ✅ 구현됨    |
 | 13  | `save_load_system.md` — 세이브/로드         | ✅ 구현됨    |
 | 14  | `campaign_stage_flow.md` — 캠페인 흐름      | ✅ 구현됨    |
-| 15  | `levelup_growth.md` — 레벨업/성장           | 🔜 다음 구현 |
-| 16  | `equipment_system.md` — 장비 시스템         | 🔜 대기      |
-| 17  | `job_class_system.md` — 직업 트리           | 🔜 대기      |
-| 18  | `ai_personality.md` — AI 성격               | 🔜 대기      |
-| 19  | `vfx_camera_minimap.md` — VFX/카메라/미니맵 | 🔜 대기      |
+| 15  | `levelup_growth.md` — 레벨업/성장           | ✅ 구현됨    |
+| 16  | `equipment_system.md` — 장비 시스템         | ✅ 구현됨    |
+| 17  | `job_class_system.md` — 직업 트리           | ✅ 구현됨    |
+| 18  | `ai_personality.md` — AI 성격               | ✅ 구현됨    |
+| 19  | `vfx_camera_minimap.md` — VFX/카메라/미니맵 | ✅ 구현됨    |

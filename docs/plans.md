@@ -28,15 +28,16 @@
 
 ---
 
-## Phase 3 — Rendering & UX ✅ MOSTLY DONE
+## Phase 3 — Rendering & UX ✅ DONE
 
 - UnitSprite (Container + procedural shape rendering) ✅
 - Move/attack/cast Tween animations ✅
 - UIScene (side panel, battle preview tooltip, skill buttons, end turn button) ✅
 - PhaserRenderer + IRenderer interface separation ✅
 - BattleCoordinator (pure logic layer, no Phaser) ✅
-- Particle VFX ❌ not yet implemented
-- Camera pan/zoom ❌ not yet implemented
+- Particle VFX ✅ (VFXManager + vfx.json — Phase 7)
+- Camera pan/zoom ✅ (CameraController — Phase 7)
+- Minimap ✅ (MinimapDisplay — Phase 7)
 - Sprite replacement (current: procedural shapes) ❌ → `docs/todo/graphics-upgrade.md`
 
 ---
@@ -47,7 +48,7 @@
 - Utility-Based AI scorer (AIScorer) ✅
 - ThreatMap (threat heatmap) ✅
 - EnemyAI.decide() orchestrator ✅
-- Per-enemy-type AI personality (aggressive/defensive/support) ❌ not yet implemented
+- Per-enemy-type AI personality (aggressive/defensive/support/hit_and_run/boss/patrol) ✅
 
 ---
 
@@ -128,10 +129,11 @@ Pivot from single game to engine + editor platform.
 
 ---
 
-## Current Priority (Next Actions)
+## Current Priority (Next Actions) — updated 2026-02-27
 
-1. Complete Phase R-1: GameProjectLoader + GameStore/EnemyAI decoupling
-2. Verify: `npx tsc --noEmit` + `npx vitest run --coverage`
-3. Phase R-2: src/engine/ directory reorganization
-4. Phase R-3: Editor foundation stub
-5. `docs/todo/pending_tasks.md` for detailed backlog
+Phases 1–7 are fully implemented. Next focus areas:
+
+1. **Tech Debt**: Undo UI (keyboard/button → `GameStore.stateHistory`), test coverage → 80%+
+2. **Phase 8 Content**: Balance tables, narrative docs, tutorial onboarding
+3. **Phase R-3**: Editor foundation stub (`src/editor/`)
+4. `docs/todo/pending_tasks.md` for detailed backlog
