@@ -1,6 +1,6 @@
 # SRPGMaker — Project Roadmap
 
-> Status: 2026-02-26
+> Status: 2026-03-01
 
 ---
 
@@ -52,7 +52,7 @@
 
 ---
 
-## Phase 5 — Content, Dynamics & Toolchain 🔄 IN PROGRESS
+## Phase 5 — Content, Dynamics & Toolchain ✅ DONE
 
 **[CRITICAL PREREQUISITE]**
 Before implementing features, the following design docs must be finalized:
@@ -87,7 +87,7 @@ Pivot from single game to engine + editor platform.
 - Written `docs/game_project_format.md` spec
 - `src/assets/data/` kept intact (engine still loads from there until R-1)
 
-### Phase R-1: GameProjectLoader + Decouple Engine 🔄 IN PROGRESS
+### Phase R-1: GameProjectLoader + Decouple Engine ✅ DONE
 
 - Create `src/data/types/GameProject.ts` (GameManifest + GameProject types)
 - Create `src/engine/loader/GameProjectLoader.ts`
@@ -112,6 +112,33 @@ Pivot from single game to engine + editor platform.
 
 ---
 
+## Phase S — Strategic Layer (Grand Strategy) 🔄 IN PROGRESS
+
+> 삼국지14-style grand strategy layer over existing SRPG tactical combat.
+> Master plan: `docs/engine_specs/21_strategic_layer_master.md`
+
+### Phase S-1: Strategic Foundation ✅ DONE
+- WorldState/WorldStore/WorldAction + WorldEventBus
+- Territory, Army, Faction, General systems
+- world.json + factions.json + diplomacy.json
+- 68 strategic tests
+
+### Phase S-2: World Map Scene ✅ DONE
+- IWorldRenderer/NullWorldRenderer + PhaserWorldRenderer
+- WorldCoordinator FSM + WorldInputHandler + WorldCameraController
+- WorldMapScene + TitleScene integration
+- 17 WorldCoordinator tests
+
+### Phase S-3: Turn System + Battle Integration ✅ DONE
+- Full turn cycle (player → AI → resolution → battles → advance)
+- CasualtySystem, AutoBattleResolver, BattleMapBuilder, StrategicAI
+- Scene flow: WorldMapScene ↔ BattleScene ↔ ResultScene
+- 64 new tests (total: 492 tests, 40 files)
+
+### Phase S-4 through S-10: See `docs/todo/pending_tasks.md`
+
+---
+
 ## Phase 6 — Editor: Form-Based (Phase E-2)
 
 - Unit editor form, Skill editor form, Terrain editor
@@ -129,11 +156,13 @@ Pivot from single game to engine + editor platform.
 
 ---
 
-## Current Priority (Next Actions) — updated 2026-02-27
+## Current Priority (Next Actions) — updated 2026-03-01
 
-Phases 1–7 are fully implemented. Next focus areas:
+Phases 1–7, 8-A, R-1, S-1/S-2/S-3 are complete. 492 tests, 83.44% coverage.
 
-1. **Tech Debt**: Undo UI (keyboard/button → `GameStore.stateHistory`), test coverage → 80%+
-2. **Phase 8 Content**: Balance tables, narrative docs, tutorial onboarding
-3. **Phase R-3**: Editor foundation stub (`src/editor/`)
-4. `docs/todo/pending_tasks.md` for detailed backlog
+### Next focus areas:
+1. **Phase S-4**: Deployment + Formation (pre-battle general selection)
+2. **Phase S-5**: Auto-Battle polish + Multi-Battle per turn
+3. **E2E Gameplay Testing**: Multi-turn strategic simulation tests
+4. **Chronicle of Shadows**: Full game design (20h playtime)
+5. See `docs/todo/pending_tasks.md` for complete prioritized backlog

@@ -27,6 +27,11 @@ const stubGameProject: GameProject = {
   terrainMap: {},
   equipmentMap: {},
   jobsMap: {},
+  audioConfig: null,
+  worldMap: null,
+  factionsData: null,
+  generalsData: null,
+  diplomacyData: null,
 };
 
 function makeState(): BattleState {

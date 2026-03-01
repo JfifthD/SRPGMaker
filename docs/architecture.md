@@ -1,6 +1,6 @@
 # SRPGMaker — Engine Architecture
 
-> Platform overview + current system patterns · Updated 2026-02-26
+> Platform overview + current system patterns · Updated 2026-03-01
 
 ---
 
@@ -82,8 +82,15 @@ src/
 │   │   ├── skill/              # SkillExecutor, BuffSystem
 │   │   ├── ai/                 # EnemyAI, AIScorer, ThreatMap
 │   │   └── turn/               # TurnManager (BattlePhase FSM)
+│   ├── strategic/             # Strategic (grand strategy) layer — zero Phaser
+│   │   ├── state/             # WorldState, WorldStore, WorldAction
+│   │   ├── systems/           # CasualtySystem, WorldTurnSystem, StrategicAI, etc.
+│   │   ├── data/types/        # World, Faction, Territory, Army, General, Diplomacy, BattleResult
+│   │   └── WorldEventBus.ts   # Strategic event bus (separate from tactical)
 │   ├── coordinator/
-│   │   └── BattleCoordinator.ts  # Pure battle logic, no Phaser imports
+│   │   ├── BattleCoordinator.ts  # Pure battle logic, no Phaser imports
+│   │   ├── WorldCoordinator.ts   # Pure strategic logic, no Phaser imports
+│   │   └── AudioCoordinator.ts   # Audio event routing
 │   ├── renderer/
 │   │   └── PhaserRenderer.ts   # IRenderer impl — all Phaser draw calls
 │   ├── input/
@@ -103,7 +110,8 @@ src/
 │   ├── TitleScene.ts
 │   ├── BattleScene.ts
 │   ├── UIScene.ts
-│   └── ResultScene.ts
+│   ├── ResultScene.ts
+│   └── WorldMapScene.ts       # Strategic world map
 └── main.ts                     # Entry point (load game project → launch)
 
 games/
@@ -117,7 +125,8 @@ tests/                          # Vitest — mirrors src/engine/systems/
 ├── movement/
 ├── skill/
 ├── ai/
-└── turn/
+├── turn/
+└── strategic/              # WorldStore, Territory, Army, Faction, CasualtySystem, etc.
 ```
 
 ---
@@ -156,10 +165,12 @@ ANIMATING → ENEMY_PHASE → PLAYER_IDLE | VICTORY | DEFEAT
 ### 4-4. Scene Hierarchy
 
 ```
-BootScene → TitleScene → BattleScene (+ UIScene launched concurrently)
+BootScene → TitleScene → BattleScene (+ UIScene)
+                       → WorldMapScene → BattleScene → ResultScene → WorldMapScene
 ```
 
 `BattleScene` is the public facade. All logic runs inside `BattleCoordinator`.
+`WorldMapScene` is the strategic facade. All logic runs inside `WorldCoordinator`.
 See `docs/engine_specs/05_scene_coordinator.md`.
 
 ### 4-5. Event Bus (Typed)
@@ -183,6 +194,21 @@ No hardcoded unit/skill/terrain data in TypeScript. All in `games/<id>/data/`.
 TypeScript interfaces in `src/engine/data/types/`.
 `GameProjectLoader` loads the active game project at startup.
 
+### 4-9. Two-Layer Architecture (Strategic + Tactical)
+
+```
+Strategic Layer (WorldState/WorldStore)
+  ↕ Battle triggers / results flow
+Tactical Layer (BattleState/GameStore)
+```
+
+The strategic layer (`src/engine/strategic/`) mirrors the tactical layer's patterns:
+- `WorldStore` follows `GameStore` pattern (immer produce, dispatch, subscribe, stateHistory)
+- `WorldAction` interface mirrors `GameAction` (validate + execute, pure state transforms)
+- `WorldEventBus` is separate from `EventBus` to prevent event collision
+- `WorldCoordinator` has zero Phaser imports, depends on `IWorldRenderer` interface
+- `NullWorldRenderer` enables headless testing (same pattern as `NullRenderer`)
+
 ---
 
 ## 5. Key Conventions
@@ -191,7 +217,8 @@ TypeScript interfaces in `src/engine/data/types/`.
 - **Immutability**: Use `produce()` from immer for all state changes inside actions.
 - **Actions are value objects**: Constructor injects all parameters; `execute()` is pure.
 - **EventBus.clear()** in test `beforeEach` when testing FSM/store listeners.
-- **Test coverage scope**: `src/engine/systems/**` only (vitest.config.ts `include` setting).
+- **Test coverage scope**: `src/engine/systems/**` + `src/engine/state/actions/**` (vitest.config.ts).
+- **Current**: 492 tests, 40 files, 83.44% coverage.
 - **`@` alias** resolves to `src/` in both vite and vitest configs.
 - **`@game` alias** resolves to `games/${GAME_ID}/` — swap game project by env var.
 
@@ -205,6 +232,8 @@ TypeScript interfaces in `src/engine/data/types/`.
 | `AIScorer` | `engine/systems/ai/AIScorer.ts` | Scores actions: `scoreAttack`, `scoreSkill`, `scoreMove` |
 | `ThreatMapCalc` | `engine/systems/ai/ThreatMap.ts` | Builds `number[][]` threat heatmap per tile |
 | `Pathworker` | `engine/systems/movement/PathfindingWorkerClient.ts` | Singleton bridge to A* Web Worker |
+| `StrategicAI` | `engine/strategic/systems/StrategicAI.ts` | Basic AI for world-map faction decisions |
+| `AutoBattleResolver` | `engine/strategic/systems/AutoBattleResolver.ts` | Headless battle simulation (separate GameStore) |
 
 `scoreMove` formula: `= -threat * 1.5 - distToTarget * 10`
 

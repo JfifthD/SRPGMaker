@@ -1,6 +1,7 @@
 {
   "id": "stage_01",
   "name": "Broken Frontier",
+  "bgmId": "bgm_battle_01",
   "width": 18,
   "height": 16,
   "terrain": [

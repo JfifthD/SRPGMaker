@@ -9,6 +9,11 @@ import type { SkillData } from './Skill';
 import type { TerrainData } from './Terrain';
 import type { EquipmentData } from './Equipment';
 import type { JobData } from './Job';
+import type { AudioConfig } from './Audio';
+import type { WorldMapData } from '@/engine/strategic/data/types/World';
+import type { FactionData } from '@/engine/strategic/data/types/Faction';
+import type { GeneralData } from '@/engine/strategic/data/types/General';
+import type { DiplomacyState } from '@/engine/strategic/data/types/Diplomacy';
 
 /** Represents the game.json manifest file at the root of every game project */
 export interface GameManifest {
@@ -22,6 +27,10 @@ export interface GameManifest {
     skills: string;        // "data/skills.json"
     terrains: string;      // "data/terrains.json"
     mapsDir: string;       // "data/maps/"
+    audio?: string;        // "data/audio.json"
+    world?: string;        // "data/world.json"
+    factions?: string;     // "data/factions.json"
+    diplomacy?: string;    // "data/diplomacy.json"
   };
   assets?: {
     imagesDir?: string;    // "assets/images/"
@@ -42,4 +51,9 @@ export interface GameProject {
   terrainMap: Record<string, TerrainData>;
   equipmentMap: Record<string, EquipmentData>;
   jobsMap: Record<string, JobData>;
+  audioConfig: AudioConfig | null;
+  worldMap: WorldMapData | null;
+  factionsData: FactionData[] | null;
+  generalsData: GeneralData[] | null;
+  diplomacyData: DiplomacyState | null;
 }

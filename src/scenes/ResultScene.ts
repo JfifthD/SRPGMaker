@@ -4,19 +4,33 @@ import { StateQuery } from '@/engine/state/BattleState';
 import { store } from '@/engine/state/GameStore';
 import { distributeStageEXP } from '@/engine/systems/progression/LevelUpSystem';
 import { promote } from '@/engine/systems/progression/JobSystem';
+import { PhaserAudioManager } from '@/engine/renderer/PhaserAudioManager';
+import { AudioCoordinator } from '@/engine/coordinator/AudioCoordinator';
 import type { UnitInstance } from '@/engine/data/types/Unit';
 import type { LevelUpResult } from '@/engine/systems/progression/LevelUpSystem';
+import type { BattleContext } from '@/engine/strategic/state/WorldState';
 
 export class ResultScene extends Phaser.Scene {
+  private audioCoord?: AudioCoordinator;
+
   constructor() { super({ key: 'ResultScene' }); }
 
-  create(data: { victory: boolean; turn: number; stageId?: string }): void {
+  create(data: { victory: boolean; turn: number; stageId?: string; worldBattle?: BattleContext }): void {
     const { width, height } = this.scale;
     const bg = this.add.graphics();
     bg.fillStyle(0x000000, 0.87);
     bg.fillRect(0, 0, width, height);
 
     document.getElementById('hud-overlay')?.remove();
+
+    // ── Result BGM (victory or defeat) ──
+    const state = store.getState();
+    const audioConfig = state.gameProject.audioConfig;
+    const audioMgr = new PhaserAudioManager(this);
+    this.audioCoord = new AudioCoordinator(audioMgr, audioConfig);
+    const bgmKey = data.victory ? audioConfig?.bgmFlow?.victory : audioConfig?.bgmFlow?.defeat;
+    this.audioCoord.playBGM(bgmKey);
+    this.events.once('shutdown', () => this.audioCoord?.destroy());
 
     const titleText = data.victory ? '✨ VICTORY' : '💀 DEFEAT';
     const subText = data.victory
@@ -36,7 +50,7 @@ export class ResultScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     if (data.victory && data.stageId) {
-      this.handleVictory(data as { victory: true; turn: number; stageId: string }, width, height);
+      this.handleVictory(data as { victory: true; turn: number; stageId: string; worldBattle?: BattleContext }, width, height);
     } else {
       this.showDefeatButtons(data, width, height);
     }
@@ -45,7 +59,7 @@ export class ResultScene extends Phaser.Scene {
   // ── Victory flow ─────────────────────────────────────────
 
   private handleVictory(
-    data: { victory: true; turn: number; stageId: string },
+    data: { victory: true; turn: number; stageId: string; worldBattle?: BattleContext },
     width: number,
     height: number,
   ): void {
@@ -337,7 +351,7 @@ export class ResultScene extends Phaser.Scene {
   // ── Continue / Defeat buttons ─────────────────────────────
 
   private showVictoryButton(
-    data: { victory: boolean; turn: number; stageId?: string },
+    data: { victory: boolean; turn: number; stageId?: string; worldBattle?: BattleContext },
     width: number,
     height: number,
   ): void {
@@ -351,6 +365,16 @@ export class ResultScene extends Phaser.Scene {
       .on('pointerover', () => nextBtn.setColor('#e8cc78'))
       .on('pointerout', () => nextBtn.setColor('#c9a84c'))
       .on('pointerdown', () => {
+        // If launched from strategic world map, return there with result
+        if (data.worldBattle) {
+          this.scene.start('WorldMapScene', {
+            returnBattle: data.worldBattle,
+            victory: data.victory,
+            turn: data.turn,
+          });
+          return;
+        }
+
         const stage = data.stageId ? campaignManager.getStage(data.stageId) : null;
         if (stage?.postDialogue) {
           this.scene.start('DialogueScene', {
@@ -365,7 +389,7 @@ export class ResultScene extends Phaser.Scene {
   }
 
   private showDefeatButtons(
-    data: { victory: boolean; turn: number; stageId?: string },
+    data: { victory: boolean; turn: number; stageId?: string; worldBattle?: BattleContext },
     width: number,
     height: number,
   ): void {
@@ -380,7 +404,15 @@ export class ResultScene extends Phaser.Scene {
       .on('pointerover', () => retryBtn.setColor('#fff'))
       .on('pointerout', () => retryBtn.setColor('#e8cc78'))
       .on('pointerdown', () => {
-        this.scene.start('BattleScene', { stageId: data.stageId ?? 'stage_01' });
+        if (data.worldBattle) {
+          // Retry same manual battle from strategic context
+          this.scene.start('BattleScene', {
+            stageId: data.stageId ?? 'stage_01',
+            worldBattle: data.worldBattle,
+          });
+        } else {
+          this.scene.start('BattleScene', { stageId: data.stageId ?? 'stage_01' });
+        }
       });
 
     const titleBtn = this.add.text(width / 2 + 80, btnY, '🏠 TITLE', {
@@ -391,6 +423,17 @@ export class ResultScene extends Phaser.Scene {
     titleBtn
       .on('pointerover', () => titleBtn.setColor('#ccc'))
       .on('pointerout', () => titleBtn.setColor('#7a8a9e'))
-      .on('pointerdown', () => this.scene.start('TitleScene'));
+      .on('pointerdown', () => {
+        if (data.worldBattle) {
+          // Return to world map as loss
+          this.scene.start('WorldMapScene', {
+            returnBattle: data.worldBattle,
+            victory: false,
+            turn: data.turn,
+          });
+        } else {
+          this.scene.start('TitleScene');
+        }
+      });
   }
 }

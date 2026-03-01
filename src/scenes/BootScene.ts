@@ -3,6 +3,8 @@
 // ─────────────────────────────────────────────
 
 import Phaser from 'phaser';
+import audioJson from '@game/data/audio.json';
+import type { AudioConfig } from '@/engine/data/types/Audio';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -35,8 +37,14 @@ export class BootScene extends Phaser.Scene {
     // ── Unit sprite frames (placeholder: generate procedurally in BattleScene) ──
     // this.load.spritesheet('warrior', 'assets/sprites/warrior.png', { frameWidth: 16, frameHeight: 16 });
 
-    // ── Audio (optional) ──
-    // this.load.audio('bgm_battle', 'assets/audio/battle.ogg');
+    // ── Audio assets (data-driven from audio.json) ──
+    const audioConfig = audioJson as unknown as AudioConfig;
+    const gameId = (import.meta as any).env?.GAME_ID ?? 'chronicle-of-shadows';
+    const audioBase = `games/${gameId}/assets/audio/`;
+
+    for (const entry of Object.values(audioConfig.entries)) {
+      this.load.audio(entry.id, audioBase + entry.file);
+    }
 
     // ── Dialogue scripts ──
     // Naming convention: {stageId}_dialogues → loaded as JSON array of DialogueScript

@@ -25,7 +25,8 @@ When making structural changes, update both the target doc AND this index.
 | graphics, upgrade, sprite, animation, hd-2d, spine, pixellab, vfx, tile, asset pipeline                                 | `docs/todo/graphics-upgrade.md`                                                             | Graphics upgrade roadmap                                                |
 | balance, stats, numeric, damage formula, ap economy, affinity, critical, scaling                                        | `games/chronicle-of-shadows/docs/balance_tables.md`                                         | Master sheet for all numeric balance, stats, and formulas (sample game) |
 | integration test, e2e test, headless test, balance test, api-driven test, buildStore, NullRenderer, deterministic damage | `docs/engine_specs/20_integration_test_guide.md`                                            | Headless dispatch-based test infra: architecture, balance verification workflow, all test file descriptions |
-| audio, sound, bgm, sfx, music, spatial audio, volume ducking                                                            | `docs/engine_specs/07_audio_framework.md`                                                   | Audio architecture, BGM/SFX asset list, spatial audio                   |
+| e2e test, gameplay test, strategic loop test, multi-turn test, campaign test, AI regression test                         | `docs/engine_specs/20_integration_test_guide.md` §10                                        | Planned E2E gameplay testing: strategic loop, battle integration, balance     |
+| audio, sound, bgm, sfx, music, spatial audio, volume ducking, AudioCoordinator, IAudioManager, PhaserAudioManager       | `docs/engine_specs/07_audio_framework.md`                                                   | Audio architecture, data-driven audio.json, event-to-SFX routing        |
 | narrative, story, lore, world, characters, factions, affinity, choices                                                  | `games/chronicle-of-shadows/docs/world_narrative.md`                                        | World lore, character profiles, synopsis (sample game)                  |
 | tutorial, onboarding, learning curve, help, undo, tips                                                                  | `games/chronicle-of-shadows/docs/tutorial_onboarding.md`                                    | Phased learning curve design (sample game)                              |
 | metagame, loop, camp, shop, equipment, prep, progression                                                                | `docs/engine_specs/08_metagame_loop.md`                                                     | Out-of-combat loop: results, camp, prep phase                           |
@@ -38,6 +39,15 @@ When making structural changes, update both the target doc AND this index.
 | victory condition, dynamic win loss, survival, escort, assassination, game rule, stage condition                        | `docs/engine_specs/12_dynamic_stage_conditions.md`                                          | Advanced win/loss conditions evaluation                                 |
 | platform separation, decouple engine, GameProjectLoader, phase r-1, manifest, game.json                                 | `docs/engine_specs/11_game_project_loader.md`                                               | Engine/Data decoupling architecture                                     |
 | sample game, chronicle, chronicle of shadows, kael, lyra, zara, serra                                                   | `games/chronicle-of-shadows/`                                                               | Sample game project directory (game.json + data/ + docs/)               |
+| game design, playtime, 20 hours, story arc, spectacle, campaign design, act, chapter                                    | `games/chronicle-of-shadows/docs/game_design_master.md`                                     | Full game design document: 20h playtime, 4 acts, story arcs, strategic campaign |
+| strategic layer, grand strategy, 삼국지, world conquest, two-layer, strategic overview                                   | `docs/engine_specs/21_strategic_layer_master.md`                                            | Master plan: architecture, game loop, confirmed decisions, MVP roadmap  |
+| world map, graph, node, edge, territory map, fog of war, FoW, scouting, scout, vision, world rendering, WorldMapScene, PhaserWorldRenderer, IWorldRenderer, WorldCameraController, WorldMinimapDisplay, WorldInputHandler | `docs/engine_specs/22_world_map_system.md`                                                  | Graph-based world map, FoW, vision, rendering approach. Impl: `src/scenes/WorldMapScene.ts`, `src/engine/renderer/PhaserWorldRenderer.ts` |
+| faction, economy, diplomacy, territory, resources, gold, food, troops, wandering generals, recruitment, alliance, war    | `docs/engine_specs/23_faction_economy_diplomacy.md`                                         | Factions, economy, territory upgrades, diplomacy, wandering generals    |
+| strategic AI, AI personality, faction AI, fortress guardian, blitz, opportunist, AI matrix                                | `docs/engine_specs/24_strategic_ai_matrix.md`                                               | 6 AI personality types, decision scoring, trait weight matrix           |
+| deployment, formation, pre-battle, lineup, commander, leadership, auto-pick, line attack, defense formation              | `docs/engine_specs/25_deployment_formation.md`                                              | Pre-battle unit selection, 3 formation presets, commander buffs         |
+| time system, world turn, multi-battle, auto-battle, simultaneous, battle resolution, replay, 30 turns, 30 days          | `docs/engine_specs/26_time_multi_battle.md`                                                 | World turn ↔ battle turn mapping, auto-battle resolver, multi-battle   |
+| casualty, troop loss, death roll, injury, post-battle, CasualtySystem                                                  | `src/engine/strategic/systems/CasualtySystem.ts`                                            | HP%-based troop loss, death/injury rolls, territory transfer, retreat  |
+| world turn cycle, turn system, phase transition, advance turn, WorldTurnSystem, StrategicAI, auto-battle, BattleMapBuilder | `src/engine/strategic/systems/WorldTurnSystem.ts`, `StrategicAI.ts`, `AutoBattleResolver.ts` | Turn cycle orchestration, AI decisions, headless battle simulation    |
 
 ## Key File Paths (Quick Reference)
 
@@ -60,6 +70,32 @@ When making structural changes, update both the target doc AND this index.
 | Integration tests      | `tests/integration/` — headless battle simulation, balance harness |
 | Test helpers           | `tests/integration/helpers.ts` — `buildStore()`, `makeUnitData()`  |
 | Headless renderer      | `src/engine/renderer/NullRenderer.ts` — IRenderer no-op stub       |
+| Audio coordinator      | `src/engine/coordinator/AudioCoordinator.ts`                       |
+| Audio interface        | `src/engine/renderer/IAudioManager.ts`                             |
+| Strategic types        | `src/engine/strategic/data/types/`                                 |
+| Strategic state        | `src/engine/strategic/state/` (WorldStore, WorldAction, WorldState)|
+| Strategic systems      | `src/engine/strategic/systems/` (Territory, Army, Faction)         |
+| Strategic actions      | `src/engine/strategic/state/actions/`                              |
+| Strategic event bus    | `src/engine/strategic/WorldEventBus.ts`                            |
+| Strategic battle types | `src/engine/strategic/data/types/BattleResult.ts`                  |
+| Strategic turn system  | `src/engine/strategic/systems/WorldTurnSystem.ts`                  |
+| Strategic AI           | `src/engine/strategic/systems/StrategicAI.ts`                      |
+| Casualty system        | `src/engine/strategic/systems/CasualtySystem.ts`                   |
+| Battle map builder     | `src/engine/strategic/systems/BattleMapBuilder.ts`                 |
+| Auto-battle resolver   | `src/engine/strategic/systems/AutoBattleResolver.ts`               |
+| Advance turn action    | `src/engine/strategic/state/actions/AdvanceTurnAction.ts`          |
+| Resolve battle action  | `src/engine/strategic/state/actions/ResolveBattleAction.ts`        |
+| Strategic tests        | `tests/strategic/` (85+ tests)                                     |
+| Strategic data (JSON)  | `games/chronicle-of-shadows/data/world.json`, `factions.json`, `diplomacy.json` |
+| World coordinator      | `src/engine/coordinator/WorldCoordinator.ts`                       |
+| World renderer         | `src/engine/renderer/PhaserWorldRenderer.ts`, `IWorldRenderer.ts`  |
+| World camera           | `src/engine/renderer/WorldCameraController.ts`                     |
+| World minimap          | `src/engine/renderer/WorldMinimapDisplay.ts`                       |
+| World input            | `src/engine/input/WorldInputHandler.ts`                            |
+| World map scene        | `src/scenes/WorldMapScene.ts`                                      |
+| World coordinator test | `tests/strategic/WorldCoordinator.test.ts`                         |
+| Game design master     | `games/chronicle-of-shadows/docs/game_design_master.md`            |
+| E2E test (planned)     | `tests/e2e/` (not yet created)                                     |
 
 ## Usage
 

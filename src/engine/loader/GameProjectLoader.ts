@@ -11,6 +11,11 @@ import type { SkillData } from '@/engine/data/types/Skill';
 import type { TerrainData } from '@/engine/data/types/Terrain';
 import type { EquipmentData } from '@/engine/data/types/Equipment';
 import type { JobData } from '@/engine/data/types/Job';
+import type { AudioConfig } from '@/engine/data/types/Audio';
+import type { WorldMapData } from '@/engine/strategic/data/types/World';
+import type { FactionData } from '@/engine/strategic/data/types/Faction';
+import type { GeneralData } from '@/engine/strategic/data/types/General';
+import type { DiplomacyState } from '@/engine/strategic/data/types/Diplomacy';
 
 // These imports resolve to games/${GAME_ID}/ via the @game Vite/TS alias.
 // Switching GAME_ID env var at build time loads a different game's data.
@@ -20,11 +25,20 @@ import skillsJson from '@game/data/skills.json';
 import terrainsJson from '@game/data/terrains.json';
 import equipmentJson from '@game/data/equipment.json';
 import jobsJson from '@game/data/jobs.json';
+import audioJson from '@game/data/audio.json';
+import worldJson from '@game/data/world.json';
+import factionsJson from '@game/data/factions.json';
+import diplomacyJson from '@game/data/diplomacy.json';
 
 let _skillsMap: Record<string, SkillData> = {};
 let _terrainMap: Record<string, TerrainData> = {};
 let _equipmentMap: Record<string, EquipmentData> = {};
 let _jobsMap: Record<string, JobData> = {};
+let _audioConfig: AudioConfig | null = null;
+let _worldMap: WorldMapData | null = null;
+let _factionsData: FactionData[] | null = null;
+let _generalsData: GeneralData[] | null = null;
+let _diplomacyData: DiplomacyState | null = null;
 let _units: UnitData[] = [];
 let _manifest: GameManifest | null = null;
 
@@ -40,6 +54,14 @@ export function loadGameProject(): GameProject {
   _terrainMap = Object.fromEntries(terrainList.map(t => [t.key, t]));
   _equipmentMap = equipmentJson as unknown as Record<string, EquipmentData>;
   _jobsMap = jobsJson as unknown as Record<string, JobData>;
+  _audioConfig = audioJson as unknown as AudioConfig;
+
+  // Strategic layer data (optional — only present for games with grand strategy)
+  _worldMap = worldJson as unknown as WorldMapData;
+  const factionsRaw = factionsJson as unknown as { factions: FactionData[]; generals: GeneralData[] };
+  _factionsData = factionsRaw.factions ?? null;
+  _generalsData = factionsRaw.generals ?? null;
+  _diplomacyData = diplomacyJson as unknown as DiplomacyState;
 
   return {
     manifest: _manifest,
@@ -48,6 +70,11 @@ export function loadGameProject(): GameProject {
     terrainMap: _terrainMap,
     equipmentMap: _equipmentMap,
     jobsMap: _jobsMap,
+    audioConfig: _audioConfig,
+    worldMap: _worldMap,
+    factionsData: _factionsData,
+    generalsData: _generalsData,
+    diplomacyData: _diplomacyData,
   };
 }
 
@@ -71,10 +98,20 @@ export function setGameContext(
   units: UnitData[] = [],
   equipmentMap: Record<string, EquipmentData> = {},
   jobsMap: Record<string, JobData> = {},
+  audioConfig: AudioConfig | null = null,
+  worldMap: WorldMapData | null = null,
+  factionsData: FactionData[] | null = null,
+  generalsData: GeneralData[] | null = null,
+  diplomacyData: DiplomacyState | null = null,
 ): void {
   _skillsMap = skillsMap;
   _terrainMap = terrainMap;
   _units = units;
   _equipmentMap = equipmentMap;
   _jobsMap = jobsMap;
+  _audioConfig = audioConfig;
+  _worldMap = worldMap;
+  _factionsData = factionsData;
+  _generalsData = generalsData;
+  _diplomacyData = diplomacyData;
 }

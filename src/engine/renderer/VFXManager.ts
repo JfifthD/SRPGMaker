@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { VFXConfig, VfxKey } from '@/engine/data/types/VFX';
+import { EventBus } from '@/engine/utils/EventBus';
 
 export class VFXManager {
   private scene: Phaser.Scene;
@@ -32,11 +33,7 @@ export class VFXManager {
     }
 
     if (config.soundKey) {
-      try {
-        this.scene.sound.play(config.soundKey);
-      } catch (e) {
-        // sound might not be loaded, safely ignore
-      }
+      EventBus.emit('sfxPlay', { key: config.soundKey });
     }
 
     // Convert config into Phaser generic particle emitter config
