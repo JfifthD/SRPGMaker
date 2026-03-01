@@ -1,154 +1,336 @@
 # Pending Task Backlog
 
-구현되지 않은 기능들의 백로그. 완료된 항목은 해당 `engine_specs/` 문서 혹은 `demo_game/` 문서로 이동하거나 삭제.
-세부 구현 계획이 있는 항목은 별도 `docs/todo/*.md` 파일로 분리.
+> Updated: 2026-03-01 | 492 tests | 83.44% coverage | tsc clean
 
-> **[CRITICAL RULE: 설계 우선 원칙]**
-> **어떠한 개발적, 아키텍처적, 기술적 기능 구현이든, 코드를 작성하기 전에 반드시 해당 시스템에 대한 기획/설계 문서를 먼저 작성하거나 업데이트한 후 그 기준에 맞춰 진행해야 합니다.** (Design-First Approach)
-
----
-
-## ✅ 완료된 과제 (Completed)
-
-- [x] **Phase R-1: GameProjectLoader 및 엔진 의존성 분리** → `docs/engine_specs/11_game_project_loader.md` ✅
-- [x] **Phase 4: 다변화된 승패 조건 (GameRule 플로우 확장)** → `docs/engine_specs/12_dynamic_stage_conditions.md` ✅
-- [x] **다중 스테이지 및 StageSelectScene (Campaign Flow)** → `docs/engine_specs/14_campaign_stage_flow.md` ✅
-- [x] **전투 진행 상태 저장/불러오기 (Save/Load)** → `docs/engine_specs/13_save_load_system.md` ✅
-- [x] **링 메뉴(Ring Menu) 마감 및 UI/UX 폴리싱** ✅
-
-## ⚔️ Phase 4.5: AP 시스템 오버홀 (Hit and Run & Dynamic Hovering) ✅
-
-새로 확립된 기획에 따른 AP 스케일링, 히트 앤 런, 다이나믹 호버링 구현.
-
-- [x] **Dynamic Hovering (다이나믹 호버링)**: 이동 가능 타일(파란색)에 마우스를 올리면 잔여 AP를 계산하여 해당 위치 기준의 공격 범위(빨간색/주황색 등)를 실시간 렌더링 (`BattleCoordinator` & `RangeRenderer` 연동).
-- [x] **AP 성장 곡선 및 Full Replenishment**: 유닛 데이터(`UnitData`)에 `maxAP` 성장 수치 반영. 턴 시작 시 AP를 무조건 가득 채우되(`currentAP = maxAP`), 남은 AP 이월(Carry-over) 로직 제거.
-- [x] **Hit and Run 기반 턴 플로우**: 1회 공격 후 턴이 강제 종료되지 않고, AP가 남아있다면 다시 이동 로직(MoveState)으로 돌아갈 수 있도록 `BattleCoordinator` 상태 머신 업데이트.
-- [x] **링 메뉴 UI 업데이트**: 잔여 AP에 따라 스킬 사용 가능 여부 판별 (AP 부족 시 아이콘/텍스트 Gray-out 처리 및 선택 불가 처리).
-
-### Phase 4.5 버그픽스 & UX 개선 ✅ (2026-02-27)
-
-- [x] **AP 취소 시 미복원 버그 수정**: `MoveAction.execute()` 내부로 AP 차감 이전. `dispatchAsync` 선차감이 `stateHistory`를 우회하던 근본 원인 제거. → `MoveAction(cost)` 파라미터 추가. (`01_core_battle.md §2-3` 참조)
-- [x] **방향 선택 UI 잔류 버그 수정**: `onCancel()` 최상단에 `renderer.hideFacingSelection()` 추가. Facing 화살표는 state 롤백으로 소거 불가한 순수 Phaser Graphics 오브젝트.
-- [x] **3-Zone Static Reachability Overlay**: 유닛 선택 즉시 Zone A(청록/이동+공격가능) · Zone B(흐린파랑/이동만) · Zone C(어두운빨강/공격도달영역) 3구역 정적 렌더링. 호버는 Zone A 타일에서 정밀 공격 범위 하이라이트로 보조. → `06_action_menu_ui.md §4` 참조.
-- [x] **호버 `inputMode` 조건 수정**: `'idle'` → `'move'`로 수정 (setSelectedUnit이 항상 'move'로 세팅하므로 기존 조건은 never-reached였음). AP 비용 텍스트(`showAPPreview`) 연결 완료.
+> **[CRITICAL RULE: Design-First Approach]**
+> Before implementing ANY feature, create or update the design doc first. Then implement to spec.
 
 ---
 
-## 🚀 Phase 5: RPG Progression (성장 시스템) — 1순위
+## Priority Order (Top → Bottom)
 
-의존성 순서: 레벨업 → 장비 → 직업 (이전 시스템이 다음의 기반)
+| # | Task | Category | Effort | Why This Order |
+|---|------|----------|--------|----------------|
+| 1 | **E2E Gameplay Testing** | Quality | M | Validates everything built so far; catches bugs before adding more features |
+| 2 | **Phase S-4: Deployment + Formation** | Strategic | L | Next strategic phase; pre-battle general selection enables real tactical depth |
+| 3 | **Phase S-5: Auto-Battle Polish + Multi-Battle** | Strategic | L | Completes the battle loop; seeded RNG + multi-front battles |
+| 4 | **Phase S-6: Economy + Territory Upgrades** | Strategic | L | Resource management; makes strategic layer meaningful |
+| 5 | **Phase S-7: Fog of War + Scouting** | Strategic | M | Information warfare; critical for strategy depth |
+| 6 | **Phase S-8: Strategic AI (Full)** | Strategic | L | 8-trait personality system; makes AI opponents interesting |
+| 7 | **Phase S-9: Diplomacy + Wandering Generals** | Strategic | L | Full strategic depth |
+| 8 | **SRPGMaker Platform Tooling** | Platform | M | CLI, validation, asset pipeline — needed before editor |
+| 9 | **Phase R-3: Editor Foundation (JSON-first)** | Editor | L | Core platform feature for game creators |
+| 10 | **Phase S-10: Polish + Strategic Campaign** | Strategic | L | Final strategic layer polish |
+| 11 | **Chronicle of Shadows: Full Game Content** | Content | XL | 20h playtime game; validates all engine systems |
+| 12 | **Graphics Upgrade** | Visual | L | HD-2D, Spine, PixelLab; deferred until engine stable |
 
-### 5-1. 유닛 레벨업 + 성장률 ✅
-
-→ **설계**: `docs/engine_specs/15_levelup_growth.md`
-
-- [x] `LevelUpSystem.ts` 구현 — EXP 계산, 성장률 기반 스탯 증가, 최소 보장 로직
-- [x] `UnitInstance`에 `exp` 필드 추가
-- [x] `ResultScene` 연동 — 전투 후 EXP 분배 + 레벨업 패널 표시 (`distributeStageEXP` → store dispatch → levelup panel) ✅ 2026-02-27
-- [x] 유닛 데이터에 `growthRates`/`baseStats` 확인 완료
-- [x] 테스트: `tests/progression/LevelUpSystem.test.ts` (16 tests)
-
-### 5-2. 장비 기믹 시스템 ✅
-
-→ **설계**: `docs/engine_specs/16_equipment_system.md`
-
-- [x] `EquipmentData` 타입 + `equipment.json` (10개 아이템)
-- [x] `EquipmentSystem.ts` — 장착/해제/최종 스탯 계산/패시브 수집
-- [x] `UnitInstance.equipment` 슬롯 추가
-- [x] `DamageCalc`에 장비 스탯 보정 연동 — `AttackAction` + `SkillAction` + `BattleCoordinator` preview ✅ 2026-02-27
-- [x] `BFS movRange`에 장비 이동력 보정 반영 — `PathfindingWorkerClient` movBudget + `AStarWorker` override ✅ 2026-02-27
-- [x] 테스트: `tests/equipment/EquipmentSystem.test.ts` (11 tests)
-
-### 5-3. 클래스 트리 및 전직 (Job System) ✅
-
-→ **설계**: `docs/engine_specs/17_job_class_system.md`
-
-- [x] `JobData` 타입 + `jobs.json` (9개 직업, 2 티어)
-- [x] `JobSystem.ts` — 전직/스킬 계승/성장률 보정/아이템 소모
-- [x] 전직 UI — `ResultScene` 레벨업 패널 이후 promotable 유닛 순차 표시 (PROMOTE/SKIP) ✅ 2026-02-27
-- [x] 성장률 보정 (`getModifiedGrowth`)
-- [x] 테스트: `tests/progression/JobSystem.test.ts` (15 tests)
+**Effort**: S = < 1 day, M = 1-3 days, L = 3-7 days, XL = 2+ weeks
 
 ---
 
-## 🤖 Phase 6: AI 확장 — 2순위 ✅
+## ✅ Completed Phases (Archive)
 
-### 6-1. 적 타입별 AI 성격 ✅
+<details>
+<summary>Click to expand completed phases (4.5, 5, 6, 7, 8-A, R-1, S-1, S-2, S-3)</summary>
 
-→ **설계**: `docs/engine_specs/18_ai_personality.md`
+- **Phase R-1**: GameProjectLoader + engine decoupling → `docs/engine_specs/11_game_project_loader.md` ✅
+- **Phase 4**: Dynamic win/loss conditions → `docs/engine_specs/12_dynamic_stage_conditions.md` ✅
+- **Phase 4**: Campaign flow → `docs/engine_specs/14_campaign_stage_flow.md` ✅
+- **Phase 4**: Save/Load → `docs/engine_specs/13_save_load_system.md` ✅
+- **Phase 4.5**: AP overhaul (hit-and-run, dynamic hovering, 3-zone overlay) ✅ 2026-02-27
+- **Phase 5-1**: Level-up + growth system → `docs/engine_specs/15_levelup_growth.md` ✅
+- **Phase 5-2**: Equipment system → `docs/engine_specs/16_equipment_system.md` ✅
+- **Phase 5-3**: Job/class system → `docs/engine_specs/17_job_class_system.md` ✅
+- **Phase 6**: AI personality types → `docs/engine_specs/18_ai_personality.md` ✅
+- **Phase 7**: VFX, camera, minimap → `docs/engine_specs/19_vfx_camera_minimap.md` ✅
+- **Phase 8-A**: Audio system → `docs/engine_specs/07_audio_framework.md` ✅
+- **Phase S-1**: Strategic foundation (WorldState/Store/Action, Territory/Army/Faction systems) ✅
+- **Phase S-2**: World map scene (IWorldRenderer, WorldCoordinator, PhaserWorldRenderer) ✅
+- **Phase S-3**: Turn system + battle integration (CasualtySystem, AutoBattleResolver, BattleMapBuilder, StrategicAI, full turn cycle, scene flow) ✅
+- **Tech Debt**: Undo UI (Z key), test coverage 69% → 83%, integration test infra ✅
 
-- [x] `AIPersonality` 타입 (aggressive/defensive/support/hit_and_run/boss/patrol) 확장
-- [x] `AIConfig` 인터페이스 구현 — 감지 범위, 거점, 순찰 경로
-- [x] `AIScorer.ts` 가중치 매핑 — 성격별 이동/공격/스킬/후퇴 가중치
-- [x] `EnemyAI.ts` 분기 처리 — `personality` 기반 행동 선택
-- [x] 맵 데이터에 `aiConfig` 필드 적용 (`units_enemies.json`에서 base config 설정 완료)
-- [x] 테스트: `tests/ai/AIPersonality.test.ts` (10 tests)
-
----
-
-## 🎨 Phase 7: Visual Polish — 3순위 ✅
-
-→ **설계**: `docs/engine_specs/19_vfx_camera_minimap.md`
-
-### 7-1. 파티클 VFX ✅
-
-- [x] `VFXManager.ts` — Phaser ParticleEmitter 래핑
-- [x] `VFXConfig` 데이터 구조 + `vfx.json`
-- [x] `SkillData.vfxId` 필드 추가, `BattleCoordinator` 연동
-- [x] 기본 이펙트: 베기, 화염, 힐 스파클, 버프 오라
-
-### 7-2. 카메라 팬 & 줌 ✅
-
-- [x] `CameraController.ts` — 드래그 팬, 휠 줌 (0.5x~2.0x)
-- [x] AI 턴 시 자동 유닛 포커스 팬
-- [x] 맵 경계 제한 (스크롤 범위 클램프)
-
-### 7-3. 미니맵 ✅
-
-- [x] `MinimapDisplay.ts` — RenderTexture 기반 축소맵
-- [x] 아군/적군 마커 (색상 구분 + 선택 유닛 깜빡임)
-- [x] 클릭 시 카메라 이동 연동
+</details>
 
 ---
 
-## 📝 Phase 8: 콘텐츠 & 기획 — 4순위
+## 🧪 Priority 1: E2E Gameplay Testing
 
-- [ ] **수치 밸런스 테이블**: `docs/demo_game/01_balance_tables.md` — HP/ATK 커브, AP/CT 공식, EXP 테이블
-- [ ] **세계관 및 시놉시스**: `docs/demo_game/02_world_narrative.md` — 챕터별 플롯, 캐릭터 시트
-- [ ] **오디오 에셋 매핑**: `docs/engine_specs/07_audio_framework.md` 리소스 계획
-- [ ] **튜토리얼 기획**: `docs/demo_game/03_tutorial_onboarding.md` — 단계별 안내 흐름
+> **Spec**: `docs/engine_specs/20_integration_test_guide.md` §10
+> **Purpose**: Validate game at the player-experience level. Catch bugs that unit tests miss.
+
+Current testing is all unit/integration (individual dispatch). No multi-turn gameplay simulation exists.
+
+### E2E-1. StrategicTestRunner Helper
+- [ ] `tests/e2e/helpers/strategicTestRunner.ts` — headless N-turn simulation
+- [ ] Combines WorldStore + WorldTurnSystem + StrategicAI + AutoBattleResolver
+- [ ] Pure sync loop (no setTimeout, no Phaser, no scene transitions)
+- [ ] Seeded RNG for deterministic results
+
+### E2E-2. Strategic Loop Test
+- [ ] `tests/e2e/StrategicLoop.test.ts`
+- [ ] 3-faction game resolves within 50 turns
+- [ ] No army stuck in invalid state after N turns
+- [ ] Faction elimination triggers correctly
+- [ ] Territory ownership converges (one faction dominates)
+
+### E2E-3. Battle Integration Test
+- [ ] `tests/e2e/BattleIntegration.test.ts`
+- [ ] Strategic collision → BattleMapBuilder → AutoBattleResolver → CasualtySystem → back to WorldState
+- [ ] Verify casualties applied correctly (troop counts decrease)
+- [ ] Verify territory transfer on siege victory
+- [ ] Verify injury/death rolls affect general status
+
+### E2E-4. AI Regression Test
+- [ ] `tests/e2e/AIRegression.test.ts`
+- [ ] AI factions create armies when idle generals exist
+- [ ] AI armies move toward enemies (not stuck)
+- [ ] No infinite loops or state corruption after 30 turns
+- [ ] AI doesn't create more armies than territory count
+
+### E2E-5. Balance Progression Test (Future)
+- [ ] Multi-battle level/stat progression stays within expected range
+- [ ] Commander buff doesn't create runaway advantage
+- [ ] Death roll probability produces reasonable general attrition over 30 turns
 
 ---
 
-## 🔧 Tech Debt — 병행 진행
+## 🗺️ Priority 2: Phase S-4 — Deployment + Formation
 
-- [x] **Undo UI 연결**: Z key → `coordinator.onCancel()` 바인딩 완료 ✅ 2026-02-27
-- [x] **테스트 커버리지 확대**: 69.67% → **83.44%** (320 tests). Integration test infra 구축 완료 ✅ 2026-02-27
-- [ ] **모바일 터치 인풋**: Capacitor 타겟 터치 이벤트 처리
-- [ ] **Spatial Hash Grid**: 대형 맵 성능을 위한 2D 공간 분할 인덱스
+> **Spec**: `docs/engine_specs/25_deployment_formation.md`
+
+Pre-battle general selection and unit placement. Currently generals auto-map to spawns; this adds player choice.
+
+- [ ] `DeploymentScene`: general selection UI (max 50 units, strict cap)
+- [ ] Auto-pick algorithm (combatPower sorting by leadership + stats)
+- [ ] 3 formation presets (Line Attack, Defense, Small Party) — no stat bonuses
+- [ ] Commander leadership buff (1%/point, baked at init) — extend BattleMapBuilder
+- [ ] Deploy zones: tiles = max(deployCount × 2, 15)
+- [ ] Battle retreat option (after turn 10, 20% additional loss)
+- [ ] Tests: deployment validation, formation placement, commander buff application
 
 ---
 
-## 📐 Engine Spec Index (설계 문서 목록)
+## ⚔️ Priority 3: Phase S-5 — Auto-Battle Polish + Multi-Battle
 
-| #   | 문서                                        | 상태         |
-| --- | ------------------------------------------- | ------------ |
-| 01  | `core_battle.md` — 전투 코어                | ✅ 구현됨    |
-| 02  | `renderer_architecture.md` — 렌더러         | ✅ 구현됨    |
-| 03  | `advanced_tactics.md` — EffectNode 시스템   | ✅ 구현됨    |
-| 04  | `state_commands_hooks.md` — 상태 커맨드     | ✅ 구현됨    |
-| 05  | `scene_coordinator.md` — 씬 코디네이터      | ✅ 구현됨    |
-| 06  | `action_menu_ui.md` — 액션 메뉴 UI          | ✅ 구현됨    |
-| 07  | `audio_framework.md` — 오디오               | 📝 설계만    |
-| 08  | `metagame_loop.md` — 메타게임 루프          | 📝 설계만    |
-| 09  | `difficulty_accessibility.md` — 난이도      | 📝 설계만    |
-| 10  | `dialogue_system.md` — 대화 시스템          | ✅ 구현됨    |
-| 11  | `game_project_loader.md` — GameProject      | ✅ 구현됨    |
-| 12  | `dynamic_stage_conditions.md` — 승패 조건   | ✅ 구현됨    |
-| 13  | `save_load_system.md` — 세이브/로드         | ✅ 구현됨    |
-| 14  | `campaign_stage_flow.md` — 캠페인 흐름      | ✅ 구현됨    |
-| 15  | `levelup_growth.md` — 레벨업/성장           | ✅ 구현됨    |
-| 16  | `equipment_system.md` — 장비 시스템         | ✅ 구현됨    |
-| 17  | `job_class_system.md` — 직업 트리           | ✅ 구현됨    |
-| 18  | `ai_personality.md` — AI 성격               | ✅ 구현됨    |
-| 19  | `vfx_camera_minimap.md` — VFX/카메라/미니맵 | ✅ 구현됨    |
+> **Spec**: `docs/engine_specs/26_time_multi_battle.md`
+
+S-3 built a basic AutoBattleResolver. S-5 polishes it and adds multi-battle support.
+
+- [ ] AutoBattleResolver: seeded RNG for deterministic/reproducible results
+- [ ] AutoBattleResolver: use full EnemyAI (both sides) instead of simplified `decideHeadless`
+- [ ] Commander delegation UI + strength estimation (1% casualty formula for preview)
+- [ ] Multiple battles per turn (sequential for 3-way: 1st vs def → winner vs 2nd)
+- [ ] Battle report (casualties, death, injury). ActionLog saved for future replay.
+- [ ] Tests: seeded auto-battle reproducibility, multi-battle resolution
+
+---
+
+## 💰 Priority 4: Phase S-6 — Economy + Territory Upgrades
+
+> **Spec**: `docs/engine_specs/23_faction_economy_diplomacy.md` §Economy
+
+- [ ] Resource system (gold, food, troops) — `FactionState.resources`
+- [ ] Territory production rates + population growth (linear + cap)
+- [ ] EconomySystem: `collectResources()`, `payMaintenance()` per turn
+- [ ] Upgrade system (walls, barracks, market, watchtower, hospital, granary)
+- [ ] Army maintenance costs (food + gold per general)
+- [ ] Troop recovery at territory (10%/turn base, 20% with Barracks)
+- [ ] Capital relocation (1st free, then 500g + 3 turn cooldown)
+- [ ] IWorldRenderer: territory upgrade panel, resource HUD
+- [ ] Tests: resource collection, maintenance, upgrade effects, recovery
+
+---
+
+## 🌫️ Priority 5: Phase S-7 — Fog of War + Scouting
+
+> **Spec**: `docs/engine_specs/22_world_map_system.md` §FoW
+
+- [ ] FoW state per faction: hidden/explored/visible per node
+- [ ] FoWSystem: `updateVision()` per turn
+- [ ] Vision sources (territory 7/5 hops, army 3, scout 8, watchtower +2)
+- [ ] Scout mode: GeneralState.status = 'scouting', 3 turns immobile, invisible, extended vision
+- [ ] PhaserWorldRenderer: FoW overlay (darkened/hidden nodes)
+- [ ] AI respects FoW (Normal: honest, Hard: explored, Nightmare: full vision)
+- [ ] Tests: vision calculation, scout mode lifecycle, FoW updates
+
+---
+
+## 🤖 Priority 6: Phase S-8 — Strategic AI (Full)
+
+> **Spec**: `docs/engine_specs/24_strategic_ai_matrix.md`
+
+Replace basic StrategicAI with personality-driven system.
+
+- [ ] Common 8-trait system (aggression, caution, expansion, defense, diplomacy, economy, loyalty, flexibility) × 1-10 scale
+- [ ] 6 presets: fortress_guardian, ambush_predator, steady_expander, blitz_conqueror, diplomat_king, opportunist
+- [ ] FactionEvaluator: threat/opportunity scoring per territory
+- [ ] Multi-front coordination (natural emergence, no explicit coalition)
+- [ ] Difficulty modifiers applied to AI decision weights
+- [ ] Tests: trait-based decision verification, preset behavior regression
+
+---
+
+## 🤝 Priority 7: Phase S-9 — Diplomacy + Wandering Generals
+
+> **Spec**: `docs/engine_specs/23_faction_economy_diplomacy.md` §Diplomacy
+
+- [ ] Alliance/war/peace/NAP system + favorability tracking
+- [ ] Diplomatic actions + AI reactions
+- [ ] DiplomacySystem: `proposePeace()`, `declareWar()`, `formAlliance()`
+- [ ] Wandering general spawning (Resolution Phase) + random stat generation
+- [ ] AI factions hire wandering generals (politics-based priority)
+- [ ] Desertion: loyalty < 30 → 30% chance → return to wandering pool
+- [ ] Neutral territory conquest (no war declaration needed, optional guardians)
+- [ ] Tests: diplomacy state changes, general hiring, desertion
+
+---
+
+## 🔧 Priority 8: SRPGMaker Platform Tooling
+
+> **Rationale**: SRPGMaker is a platform, not just an engine. These tools are essential for game creators and AI-assisted development.
+
+### T-1. Game Project Validation CLI
+- [ ] `src/engine/loader/GameProjectValidator.ts` — validates game.json + all referenced files
+- [ ] Schema validation for each JSON file type (units, skills, terrains, maps, world, factions)
+- [ ] Cross-reference checks (e.g., skill IDs in units exist in skills.json)
+- [ ] CLI entry: `npx srpgmaker validate <game-id>`
+- [ ] Integrate into CI/pre-commit
+
+### T-2. Game Project Scaffolding
+- [ ] `npx srpgmaker create <game-id>` — scaffold new game project from template
+- [ ] Copy template files + update game.json manifest
+- [ ] Include minimal sample data (1 map, 2 units, 1 skill)
+
+### T-3. Asset Pipeline (Future)
+- [ ] Spritesheet import/validation (dimensions, frame count)
+- [ ] Audio file validation (format, duration)
+- [ ] Tilemap import from external editors (Tiled JSON export)
+
+### T-4. Build + Export Pipeline
+- [ ] `vite build --mode game` → production web build (verified working)
+- [ ] Capacitor wrapping for iOS/Android
+- [ ] Tauri wrapping for Desktop
+- [ ] See `docs/export_pipeline.md` for full spec
+
+---
+
+## 🖥️ Priority 9: Phase R-3 — Editor Foundation (JSON-first)
+
+> **Spec**: `docs/editor_roadmap.md` Phase E-1
+
+- [ ] `src/editor/scenes/EditorScene.ts` — editor mode home screen
+- [ ] JSON textarea panels for units, skills, terrains, maps, world
+- [ ] JSON parse validation + inline error display
+- [ ] Hot-reload preview (embedded BattleScene)
+- [ ] `MODE=editor` entry point in `main.ts`
+- [ ] Strategic data editing (world.json, factions.json, diplomacy.json)
+
+---
+
+## ✨ Priority 10: Phase S-10 — Polish + Strategic Campaign
+
+- [ ] Chronicle of Shadows full strategic campaign (5 factions, 25+ nodes)
+- [ ] AI personalities tuned per faction (preset + overrides)
+- [ ] Story events (scripted general defections, alliance triggers)
+- [ ] Battle map generation from world map (field: edge terrain blend, territory: type-based)
+- [ ] Season effects (deferred from MVP), battle replay UI
+- [ ] Balance tuning + tutorial integration
+
+---
+
+## 🎮 Priority 11: Chronicle of Shadows — Full Game Content
+
+> **Design doc**: `games/chronicle-of-shadows/docs/game_design_master.md`
+> **Target**: 20+ hours playtime, 4 acts, 24+ maps
+
+Personal story → war escalation → continental conflict → climactic finale.
+
+### G-1. Act 1 Content (6 maps + story data)
+- [ ] 6 MapData files (stage_01 through stage_06): tutorial progression
+- [ ] Dialogue JSON for each chapter (requires dialogue system implementation)
+- [ ] Tutorial triggers (progressive mechanic introduction)
+- [ ] Balance: 4-character squad, level 1-10
+- [ ] Story beats: border patrol → investigation → conspiracy → exile
+
+### G-2. Act 2 Content (strategic layer opens)
+- [ ] Expand world.json: 13 → 20 nodes
+- [ ] Add 2 new factions (Free City League, Order of the Dawn)
+- [ ] 6 story battle maps + 4 strategic-triggered maps
+- [ ] Story events (betrayal, alliance, siege)
+- [ ] Balance: 6-8 characters, level 10-20
+
+### G-3. Act 3 Content (full strategic campaign)
+- [ ] Expand world.json: 20 → 25-30 nodes
+- [ ] 5 factions fully operational with economies
+- [ ] 10+ dynamic battle maps (strategic layer triggers)
+- [ ] AI personality tuning per faction
+- [ ] Balance: full roster, level 20-30
+
+### G-4. Act 4 + Multiple Endings
+- [ ] 4 climactic battle maps (multi-phase, scripted events)
+- [ ] 3 endings based on choices (true/sacrifice/fallen)
+- [ ] Character-specific epilogues based on affinity
+- [ ] Full balance pass across all 24+ maps
+
+### G-5. Supporting Content
+- [ ] 30-40 unique units, 40-50 skills, 30-40 equipment items, 15-20 job classes
+- [ ] 200+ dialogue entries
+- [ ] 40-50 audio tracks (BGM + SFX)
+- [ ] Hidden generals, side quests, optional battles
+
+---
+
+## 🎨 Priority 12: Graphics Upgrade
+
+> **Spec**: `docs/todo/graphics-upgrade.md`
+
+- [ ] HD-2D aesthetic (current: procedural shapes)
+- [ ] Spine/DragonBones animation integration
+- [ ] PixelLab or AI-generated sprite pipeline
+- [ ] Isometric/tile-based visual upgrade
+- [ ] VFX particle upgrade (screen-shake, screen-flash)
+
+---
+
+## 🔧 Tech Debt (Ongoing)
+
+- [x] Undo UI connection: Z key → `coordinator.onCancel()` ✅ 2026-02-27
+- [x] Test coverage expansion: 69% → 83.44% (492 tests, 40 files) ✅ 2026-03-01
+- [ ] **Mobile touch input**: Capacitor-target touch event handling
+- [ ] **Spatial Hash Grid**: 2D spatial partitioning for large map performance (100+ units)
+- [ ] **Metagame loop implementation**: `docs/engine_specs/08_metagame_loop.md` (design only)
+- [ ] **Difficulty/accessibility implementation**: `docs/engine_specs/09_difficulty_accessibility.md` (design only)
+- [ ] **WorldCoordinator decomposition**: Turn cycle logic is ~180 lines in one class; consider extracting `TurnCycleController`
+
+---
+
+## 📐 Engine Spec Index
+
+| #   | Document                                    | Status            |
+| --- | ------------------------------------------- | ----------------- |
+| 01  | `core_battle.md` — Combat core              | ✅ Implemented    |
+| 02  | `renderer_architecture.md` — Renderer       | ✅ Implemented    |
+| 03  | `advanced_tactics.md` — EffectNode system   | ✅ Implemented    |
+| 04  | `state_commands_hooks.md` — State commands   | ✅ Implemented    |
+| 05  | `scene_coordinator.md` — Scene coordinator   | ✅ Implemented    |
+| 06  | `action_menu_ui.md` — Action Menu UI        | ✅ Implemented    |
+| 07  | `audio_framework.md` — Audio                | ✅ Implemented    |
+| 08  | `metagame_loop.md` — Metagame loop          | 📝 Design only   |
+| 09  | `difficulty_accessibility.md` — Difficulty   | 📝 Design only   |
+| 10  | `dialogue_system.md` — Dialogue system       | ✅ Implemented    |
+| 11  | `game_project_loader.md` — GameProject       | ✅ Implemented    |
+| 12  | `dynamic_stage_conditions.md` — Win/loss     | ✅ Implemented    |
+| 13  | `save_load_system.md` — Save/Load            | ✅ Implemented    |
+| 14  | `campaign_stage_flow.md` — Campaign flow     | ✅ Implemented    |
+| 15  | `levelup_growth.md` — Level-up/growth        | ✅ Implemented    |
+| 16  | `equipment_system.md` — Equipment            | ✅ Implemented    |
+| 17  | `job_class_system.md` — Job tree             | ✅ Implemented    |
+| 18  | `ai_personality.md` — AI personality         | ✅ Implemented    |
+| 19  | `vfx_camera_minimap.md` — VFX/Camera/Minimap | ✅ Implemented    |
+| 20  | `integration_test_guide.md` — Test guide     | ✅ Implemented    |
+| 21  | `strategic_layer_master.md` — Strategic layer | ✅ S-1/S-2/S-3   |
+| 22  | `world_map_system.md` — World map            | ✅ S-2 impl       |
+| 23  | `faction_economy_diplomacy.md` — Economy     | 📝 S-6/S-9 待    |
+| 24  | `strategic_ai_matrix.md` — Strategic AI      | 📝 S-8 待        |
+| 25  | `deployment_formation.md` — Deployment       | 📝 S-4 待        |
+| 26  | `time_multi_battle.md` — Time/multi-battle   | 📝 S-5 待        |

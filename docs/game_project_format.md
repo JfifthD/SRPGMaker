@@ -1,7 +1,7 @@
 # Game Project Format
 
 > Canonical spec for the `game.json` manifest and game project directory structure.
-> Updated: 2026-02-26
+> Updated: 2026-03-01
 
 ---
 
@@ -23,6 +23,10 @@ games/
     │   ├── units.json         ← All units (allies + enemies; "team" field distinguishes)
     │   ├── skills.json        ← Skill definitions
     │   ├── terrains.json      ← Terrain definitions
+    │   ├── audio.json         ← Audio config (BGM/SFX entries, event map, BGM flow)
+    │   ├── world.json         ← World map graph (nodes + edges) [OPTIONAL]
+    │   ├── factions.json      ← Faction definitions + generals [OPTIONAL]
+    │   ├── diplomacy.json     ← Initial diplomatic relations [OPTIONAL]
     │   └── maps/
     │       ├── stage_01.json  ← MapData for first map
     │       └── stage_02.json  ← ...
@@ -51,6 +55,10 @@ interface GameManifest {
     skills: string;        // "data/skills.json"
     terrains: string;      // "data/terrains.json"
     mapsDir: string;       // "data/maps/"
+    audio?: string;        // "data/audio.json"
+    world?: string;        // "data/world.json"
+    factions?: string;     // "data/factions.json"
+    diplomacy?: string;    // "data/diplomacy.json"
   };
   assets?: {
     imagesDir?: string;    // "assets/images/"
@@ -123,6 +131,116 @@ MapData object:
   "defeatCondition":  { "type": "all_allies_dead" }
 }
 ```
+
+### `audio.json`
+
+Audio configuration with three sections:
+
+```json
+{
+  "entries": {
+    "<asset_id>": {
+      "id": "<asset_id>",
+      "category": "bgm" | "sfx",
+      "file": "<relative path from audioDir>",
+      "defaultVolume": 0.0-1.0,
+      "loop": true | false,
+      "tags": ["tense", "epic"]
+    }
+  },
+  "eventMap": {
+    "onUnitDamaged": "<sfx_asset_id>",
+    "onCriticalHit": "<sfx_asset_id>"
+  },
+  "bgmFlow": {
+    "title": "<bgm_asset_id>",
+    "battle": "<bgm_asset_id>",
+    "victory": "<bgm_asset_id>",
+    "defeat": "<bgm_asset_id>",
+    "camp": "<bgm_asset_id>"
+  }
+}
+```
+
+See `docs/engine_specs/07_audio_framework.md` for the full event map key list.
+
+### `world.json` (Optional — Strategic Layer)
+
+Graph-based world map for the grand strategy layer:
+
+```json
+{
+  "mapWidth": 800, "mapHeight": 600,
+  "nodes": [
+    {
+      "id": "aldoria_capital", "name": "Aldoria Capital", "type": "city",
+      "x": 200, "y": 400, "terrain": "plains",
+      "visionRadius": 7, "defenseBonus": 30, "maxUpgradeSlots": 4,
+      "battleMapId": "stage_capital"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1", "from": "aldoria_capital", "to": "eastern_fort",
+      "bidirectional": true, "moveCost": 1, "terrain": "plains", "passable": true
+    }
+  ]
+}
+```
+
+Node types: `city`, `fortress`, `village`, `port`, `pass`, `camp`.
+Terrain types: `plains`, `forest`, `mountain`, `desert`, `coastal`, `swamp`, `snow`.
+See `src/engine/strategic/data/types/World.ts` for full interfaces.
+
+### `factions.json` (Optional — Strategic Layer)
+
+Contains `factions` array and `generals` array:
+
+```json
+{
+  "factions": [
+    {
+      "id": "aldora", "name": "Kingdom of Aldora", "color": 16711680,
+      "leader": "kael", "capital": "aldoria_capital",
+      "isPlayer": true,
+      "aiProfile": { "preset": "steady_expander" },
+      "startTerritories": ["aldoria_capital", "eastern_fort"],
+      "startGenerals": ["kael", "lyra"],
+      "startResources": { "gold": 5000, "food": 3000, "troops": 10000 }
+    }
+  ],
+  "generals": [
+    {
+      "id": "kael", "name": "Kael", "unitDataId": "warrior",
+      "leadership": 14, "intellect": 7, "politics": 5, "charm": 8
+    }
+  ]
+}
+```
+
+AI presets: `fortress_guardian`, `ambush_predator`, `steady_expander`, `blitz_conqueror`, `diplomat_king`, `opportunist`.
+See `src/engine/strategic/data/types/Faction.ts` and `General.ts` for full interfaces.
+
+### `diplomacy.json` (Optional — Strategic Layer)
+
+Initial diplomatic relations between factions:
+
+```json
+{
+  "relations": {
+    "aldora": {
+      "shadow_legion": { "status": "war", "favorability": -80, "treatyTurnsLeft": 0 }
+    },
+    "shadow_legion": {
+      "aldora": { "status": "war", "favorability": -80, "treatyTurnsLeft": 0 }
+    }
+  }
+}
+```
+
+Status values: `war`, `hostile`, `neutral`, `friendly`, `allied`.
+Favorability range: -100 to +100. Unspecified pairs default to `neutral` / 0.
+See `src/engine/strategic/data/types/Diplomacy.ts` for full interface.
 
 ---
 

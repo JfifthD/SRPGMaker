@@ -1,8 +1,8 @@
 # Engine Spec 20 — Integration & Balance Test Guide
 
-> **Status**: ✅ Implemented (2026-02-27)
+> **Status**: ✅ Implemented (2026-03-01)
 > **Coverage target**: ≥ 80% statements (current: 83.44%)
-> **Test count**: 320 (54 integration + 266 unit)
+> **Test count**: 492 (54 integration + 155 strategic + 283 unit) across 40 files
 
 ---
 
@@ -90,6 +90,16 @@ advanceTurnUntil(store, predicate, maxIterations?)
 | `SkillFacingAction.test.ts` | Skill type pipeline | Heal cap, MP cost guard, buff/debuff stat change, kill → `unitDefeated` event, `FacingAction` direction |
 | `ZocPipeline.test.ts` | MoveAction path + ZOC | Path traversal with no ZOC, ZOC halt at adjacent tile, `wasInZoc` branch, `lae` log event |
 | `ReactionSystem.test.ts` (in `tests/combat/`) | Counter-attack + chain-assist | 800 ms timer dispatch, dead-defender guard, no-activeUnit guard, chain-depth limit |
+| `tests/strategic/WorldStore.test.ts` | WorldStore dispatch + subscribe | State update, history, subscribe callbacks |
+| `tests/strategic/TerritorySystem.test.ts` | Territory ownership + adjacency | Transfer, path queries |
+| `tests/strategic/ArmySystem.test.ts` | Army CRUD + movement + collision | Create, move, disband, collision detection |
+| `tests/strategic/FactionSystem.test.ts` | Faction init + elimination | Game over checks |
+| `tests/strategic/WorldActions.test.ts` | WorldAction dispatch pipeline | All strategic action types |
+| `tests/strategic/WorldCoordinator.test.ts` | Turn FSM + coordinator methods | FSM transitions via NullWorldRenderer spy |
+| `tests/strategic/CasualtySystem.test.ts` | Post-battle casualties | Troop loss, death/injury rolls, territory transfer |
+| `tests/strategic/WorldTurnSystem.test.ts` | Phase transitions + turn cycle | Valid/invalid transitions, resolution, advance |
+| `tests/strategic/StrategicAI.test.ts` | AI decision making | Army creation, movement targeting |
+| `tests/strategic/BattleMapBuilder.test.ts` | Generals → MapData conversion | Spawn placement, commander buff |
 
 ---
 
@@ -238,7 +248,7 @@ src/engine/state/actions/**  ← AttackAction, MoveAction, SkillAction, etc.
 | `SaveManager` requires mock | IndexedDB not available in Node.js | `vi.mock('@/engine/systems/save/SaveManager', ...)` in every integration test file |
 | `setTimeout`-based reactions (ReactionSystem) | Need `vi.useFakeTimers()` + `vi.advanceTimersByTime()` | See `tests/combat/ReactionSystem.test.ts` |
 | BattleCoordinator-based E2E (onTileClick → full pipeline) | Async busy-flag + Phaser dependency | Deferred — use `store.dispatch()` directly instead |
-| Browser/Playwright E2E | Explicitly out of scope | Not planned; API-driven integration tests are preferred |
+| E2E Gameplay simulation | Multi-turn strategic campaign loop not yet tested | Planned: `tests/e2e/` with headless multi-turn simulation |
 
 ---
 
@@ -264,3 +274,66 @@ tests/
 src/engine/renderer/
 └── NullRenderer.ts             ← IRenderer no-op for headless tests
 ```
+
+---
+
+## 10. E2E Gameplay Testing (Planned)
+
+> Status: 📝 Design phase — not yet implemented
+
+### 10.1 Purpose
+
+E2E gameplay tests simulate actual game sessions at the player experience level. Unlike integration tests (which dispatch individual actions), E2E tests run **full game loops**: multiple turns, AI decisions, battle resolution, casualties, and game-over checks.
+
+### 10.2 Planned Test Types
+
+| Type | Scope | Example |
+|------|-------|---------|
+| **Strategic Loop** | Full world turn cycle × N turns | Start with 3 factions, run 30 turns, verify one faction wins |
+| **Battle Integration** | Strategic → Tactical → Results → Strategic | Trigger collision, build map, auto-resolve, verify casualties applied |
+| **Balance Verification** | Multi-turn stat progression | Run 10 battles, verify level-up distribution stays within expected range |
+| **AI Regression** | AI makes reasonable decisions | Run AI factions 20 turns, verify no army stuck, no infinite loops |
+| **Campaign Flow** | Full scene flow (headless) | Title → World Map → Battle → Result → World Map × N |
+
+### 10.3 Architecture
+
+```
+tests/e2e/
+├── helpers/
+│   └── strategicTestRunner.ts   ← Runs N world turns headlessly
+├── StrategicLoop.test.ts        ← 30-turn simulation
+├── BattleIntegration.test.ts    ← Strategic → Tactical → back
+├── BalanceProgression.test.ts   ← Multi-battle level/stat progression
+└── AIRegression.test.ts         ← AI faction behavior verification
+```
+
+Key infrastructure needed:
+- `StrategicTestRunner`: combines WorldStore + WorldTurnSystem + StrategicAI + AutoBattleResolver in a headless loop
+- Seeded RNG for deterministic results
+- Assertions on WorldState after N turns (faction territories, army counts, general status)
+- Performance: 30-turn simulation should complete in < 5 seconds
+
+### 10.4 Example: Strategic Loop Test (Pseudocode)
+
+```typescript
+it('3-faction game resolves within 50 turns', () => {
+  const { worldStore, worldMap } = buildStrategicStore(testWorldData);
+  const runner = new StrategicTestRunner(worldStore, worldMap, gameProject);
+
+  const result = runner.runTurns(50); // headless: AI all factions, auto-resolve all battles
+
+  expect(result.gameOver).toBe(true);
+  expect(result.turnsPlayed).toBeLessThanOrEqual(50);
+  expect(result.winnerFactionId).toBeDefined();
+  // Verify no army stuck in invalid state
+  for (const army of Object.values(result.finalState.armies)) {
+    expect(['idle', 'moving']).toContain(army.status);
+  }
+});
+```
+
+### 10.5 Prerequisites
+- [ ] StrategicTestRunner helper class
+- [ ] Seeded RNG integration for AutoBattleResolver
+- [ ] Multi-turn StrategicAI + resolution loop (currently WorldCoordinator uses setTimeout; need pure version)
+- [ ] Strategic test world data (can reuse Chronicle of Shadows data or create minimal test data)

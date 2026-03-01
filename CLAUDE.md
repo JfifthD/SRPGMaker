@@ -26,20 +26,19 @@ docs/
 ├── editor_roadmap.md                 ← 3-phase editor development plan
 ├── export_pipeline.md                ← Platform export guide
 ├── engine_specs/
-│   ├── 01_core_battle.md             ← CT/AP/Facing specs
-│   ├── 02_renderer_architecture.md   ← Z-axis, tile size, depth sorting
-│   ├── 03_advanced_tactics.md        ← ZOC, Reactions, Chain attacks
-│   ├── 04_state_commands_hooks.md    ← BattleState + GameStore + Actions (CANONICAL)
-│   ├── 05_scene_coordinator.md       ← Scene hierarchy + Coordinator + IRenderer
-│   ├── 06_action_menu_ui.md          ← Ring Command, Action Menu decoupling
-│   ├── 07_audio_framework.md         ← Audio architecture
-│   ├── 08_metagame_loop.md           ← Out-of-combat loop
-│   ├── 09_difficulty_accessibility.md
+│   ├── 01–09                         ← Core systems (battle, renderer, tactics, state, scenes, UI, audio, metagame, difficulty)
+│   ├── 10_dialogue_system.md         ← Dialogue system
+│   ├── 11_game_project_loader.md     ← GameProjectLoader
+│   ├── 12–14                         ← Stage conditions, save/load, campaign flow
+│   ├── 15–17                         ← Progression (levelup, equipment, job system)
+│   ├── 18_ai_personality.md          ← AI personality types
+│   ├── 19_vfx_camera_minimap.md      ← VFX/Camera/Minimap
+│   ├── 20_integration_test_guide.md  ← Test infrastructure guide
+│   ├── 21–26                         ← Strategic layer specs (master plan, world map, factions, AI, deployment, time)
 │   └── schema_definitions.md
 └── todo/
-    ├── pending_tasks.md              ← Consolidated backlog
+    ├── pending_tasks.md              ← Consolidated backlog (prioritized)
     ├── implement-dialogue-system.md
-    ├── implement-irenderer.md
     └── graphics-upgrade.md
 
 games/
@@ -94,6 +93,12 @@ All implementation must be structurally sound, following these primary directive
 - Phaser belongs in `src/scenes/`, `src/engine/renderer/`, `src/engine/input/`.
 - `BattleCoordinator` has no Phaser imports — depends on `IRenderer` interface.
 
+### No Phaser in Strategic Systems
+
+- `src/engine/strategic/**` = zero Phaser imports. Pure TypeScript only.
+- `WorldCoordinator` has no Phaser imports — depends on `IWorldRenderer` interface.
+- WorldStore follows the same immutability pattern as GameStore.
+
 ### Data-Driven
 
 - No hardcoded unit/skill/terrain stats in TypeScript. All in `games/<game-id>/data/*.json`.
@@ -104,6 +109,13 @@ All implementation must be structurally sound, following these primary directive
 
 - `TurnManager` enforces strict `BattlePhase` transitions via the `TRANSITIONS` map.
 - Never set `phase` directly on BattleState without going through `TurnManager.transition()`.
+
+### Two-Layer State Architecture
+
+- **Tactical**: `GameStore` / `BattleState` / `GameAction` / `EventBus`
+- **Strategic**: `WorldStore` / `WorldState` / `WorldAction` / `WorldEventBus`
+- These are fully separate singletons. Battle results flow back to WorldState after each battle.
+- `exactOptionalPropertyTypes` is enabled: use `delete` or omit field instead of `= undefined`.
 
 ### EventBus
 
@@ -120,13 +132,16 @@ All implementation must be structurally sound, following these primary directive
 
 ## 4. Testing Rules
 
-- Test coverage scope: `src/engine/systems/**` only (vitest.config.ts).
+- Test coverage scope: `src/engine/systems/**` + `src/engine/state/actions/**` (vitest.config.ts).
 - Run: `npx vitest run --coverage`
-- Target: maintain ≥ 60% coverage statements.
+- Target: maintain ≥ 80% coverage statements (current: 83.44%).
+- **Test count**: 492 tests across 40 files (unit + integration + strategic).
 - `AStarWorker.ts` and `PathfindingWorkerClient.ts` are untestable in Node (Web Worker APIs) — expected 0%.
 - Use `vi.mock('@/engine/systems/movement/PathfindingWorkerClient', ...)` to mock Pathworker in EnemyAI tests.
 - `EventBus.clear()` in `beforeEach` when testing TurnManager or store subscribers.
+- `WorldEventBus.clear()` + `resetArmyIdCounter()` in `beforeEach` for strategic tests.
 - Factory pattern: `makeUnit(overrides)` and `makeState(units, width?, height?)` in each test file.
+- Strategic tests: `tests/strategic/` mirrors `src/engine/strategic/`.
 
 ---
 
