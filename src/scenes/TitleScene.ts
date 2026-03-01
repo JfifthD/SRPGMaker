@@ -3,9 +3,12 @@ import { SaveManager } from '@/engine/systems/save/SaveManager';
 import { campaignManager, createDefaultCampaign } from '@/engine/systems/campaign/CampaignManager';
 import { loadGameProject } from '@/engine/loader/GameProjectLoader';
 import { store } from '@/engine/state/GameStore';
+import { PhaserAudioManager } from '@/engine/renderer/PhaserAudioManager';
+import { AudioCoordinator } from '@/engine/coordinator/AudioCoordinator';
 
 export class TitleScene extends Phaser.Scene {
   private hasSaveData = false;
+  private audioCoord?: AudioCoordinator;
 
   constructor() { super({ key: 'TitleScene' }); }
 
@@ -14,6 +17,13 @@ export class TitleScene extends Phaser.Scene {
 
     // Check for existing save data
     this.hasSaveData = await SaveManager.hasSave('autosave');
+
+    // ── Title BGM ──
+    const gameProject = loadGameProject();
+    const audioMgr = new PhaserAudioManager(this);
+    this.audioCoord = new AudioCoordinator(audioMgr, gameProject.audioConfig);
+    this.audioCoord.playBGM(gameProject.audioConfig?.bgmFlow?.title);
+    this.events.once('shutdown', () => this.audioCoord?.destroy());
 
     // ── Background gradient ──
     const bg = this.add.graphics();
@@ -55,9 +65,27 @@ export class TitleScene extends Phaser.Scene {
         this.scene.start('BattleScene', { stageId: 'stage_01' });
       });
 
+    // ── World Map Button ──
+    const worldBtn = this.add.text(width / 2, height * 0.72, 'WORLD MAP', {
+      fontFamily: 'serif',
+      fontSize: '24px',
+      color: '#7accc9',
+      backgroundColor: '#151a22',
+      padding: { x: 24, y: 10 },
+    })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+
+    worldBtn
+      .on('pointerover', () => worldBtn.setColor('#a0ece8'))
+      .on('pointerout', () => worldBtn.setColor('#7accc9'))
+      .on('pointerdown', () => {
+        this.scene.start('WorldMapScene');
+      });
+
     // ── Continue Button (only if save exists) ──
     if (this.hasSaveData) {
-      const contBtn = this.add.text(width / 2, height * 0.74, '↺  CONTINUE', {
+      const contBtn = this.add.text(width / 2, height * 0.82, '↺  CONTINUE', {
         fontFamily: 'serif',
         fontSize: '24px',
         color: '#7accc9',

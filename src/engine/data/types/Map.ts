@@ -90,5 +90,8 @@ export interface MapData {
 
   /** Phaser tilemap key (for Tiled-based maps) */
   tilemapKey?: string;
+
+  /** BGM asset ID override for this map. Falls back to bgmFlow.battle if absent. */
+  bgmId?: string;
 }
 

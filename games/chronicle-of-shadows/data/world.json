@@ -1,0 +1,173 @@
+{
+  "mapWidth": 800,
+  "mapHeight": 600,
+  "backgroundImage": "assets/images/world_map_bg.png",
+  "nodes": [
+    {
+      "id": "capital_aldora",
+      "name": "Aldora Capital",
+      "type": "city",
+      "x": 200,
+      "y": 400,
+      "visionRadius": 7,
+      "defenseBonus": 30,
+      "maxUpgradeSlots": 4,
+      "terrain": "plains"
+    },
+    {
+      "id": "fort_north",
+      "name": "Northern Bastion",
+      "type": "fortress",
+      "x": 250,
+      "y": 250,
+      "visionRadius": 7,
+      "defenseBonus": 50,
+      "maxUpgradeSlots": 3,
+      "terrain": "mountain"
+    },
+    {
+      "id": "village_east",
+      "name": "Eastwood Village",
+      "type": "village",
+      "x": 350,
+      "y": 420,
+      "visionRadius": 5,
+      "defenseBonus": 10,
+      "maxUpgradeSlots": 2,
+      "terrain": "forest"
+    },
+    {
+      "id": "port_haven",
+      "name": "Port Haven",
+      "type": "port",
+      "x": 150,
+      "y": 500,
+      "visionRadius": 5,
+      "defenseBonus": 20,
+      "maxUpgradeSlots": 3,
+      "terrain": "coastal"
+    },
+    {
+      "id": "mountain_pass",
+      "name": "Dragon's Pass",
+      "type": "pass",
+      "x": 400,
+      "y": 200,
+      "visionRadius": 5,
+      "defenseBonus": 40,
+      "maxUpgradeSlots": 1,
+      "terrain": "mountain"
+    },
+    {
+      "id": "crossroads",
+      "name": "Crossroads Inn",
+      "type": "village",
+      "x": 450,
+      "y": 380,
+      "visionRadius": 5,
+      "defenseBonus": 10,
+      "maxUpgradeSlots": 2,
+      "terrain": "plains"
+    },
+    {
+      "id": "shadow_citadel",
+      "name": "Shadow Citadel",
+      "type": "city",
+      "x": 650,
+      "y": 250,
+      "visionRadius": 7,
+      "defenseBonus": 30,
+      "maxUpgradeSlots": 4,
+      "terrain": "desert"
+    },
+    {
+      "id": "dark_fortress",
+      "name": "Dark Fortress",
+      "type": "fortress",
+      "x": 600,
+      "y": 400,
+      "visionRadius": 7,
+      "defenseBonus": 50,
+      "maxUpgradeSlots": 3,
+      "terrain": "swamp"
+    },
+    {
+      "id": "shadow_outpost",
+      "name": "Shadow Outpost",
+      "type": "camp",
+      "x": 520,
+      "y": 350,
+      "visionRadius": 3,
+      "defenseBonus": 5,
+      "maxUpgradeSlots": 1,
+      "terrain": "forest"
+    },
+    {
+      "id": "shadow_port",
+      "name": "Blackwater Port",
+      "type": "port",
+      "x": 700,
+      "y": 450,
+      "visionRadius": 5,
+      "defenseBonus": 20,
+      "maxUpgradeSlots": 3,
+      "terrain": "coastal"
+    },
+    {
+      "id": "northern_hold",
+      "name": "Frostguard Hold",
+      "type": "fortress",
+      "x": 450,
+      "y": 80,
+      "visionRadius": 7,
+      "defenseBonus": 50,
+      "maxUpgradeSlots": 3,
+      "terrain": "snow"
+    },
+    {
+      "id": "frozen_village",
+      "name": "Snowpeak Village",
+      "type": "village",
+      "x": 550,
+      "y": 60,
+      "visionRadius": 5,
+      "defenseBonus": 10,
+      "maxUpgradeSlots": 2,
+      "terrain": "snow"
+    },
+    {
+      "id": "highland_camp",
+      "name": "Highland Camp",
+      "type": "camp",
+      "x": 520,
+      "y": 130,
+      "visionRadius": 3,
+      "defenseBonus": 5,
+      "maxUpgradeSlots": 1,
+      "terrain": "mountain"
+    }
+  ],
+  "edges": [
+    { "id": "e01", "from": "capital_aldora", "to": "fort_north", "bidirectional": true, "moveCost": 1, "terrain": "plains", "passable": true, "width": 2 },
+    { "id": "e02", "from": "capital_aldora", "to": "village_east", "bidirectional": true, "moveCost": 1, "terrain": "plains", "passable": true, "width": 2 },
+    { "id": "e03", "from": "capital_aldora", "to": "port_haven", "bidirectional": true, "moveCost": 1, "terrain": "coastal", "passable": true, "width": 2 },
+    { "id": "e04", "from": "fort_north", "to": "mountain_pass", "bidirectional": true, "moveCost": 2, "terrain": "mountain", "passable": true, "width": 1 },
+    { "id": "e05", "from": "village_east", "to": "crossroads", "bidirectional": true, "moveCost": 1, "terrain": "forest", "passable": true, "width": 1 },
+    { "id": "e06", "from": "port_haven", "to": "shadow_port", "bidirectional": true, "moveCost": 2, "terrain": "coastal", "passable": true, "width": 1 },
+    { "id": "e07", "from": "mountain_pass", "to": "shadow_citadel", "bidirectional": true, "moveCost": 2, "terrain": "mountain", "passable": true, "width": 1 },
+    { "id": "e08", "from": "mountain_pass", "to": "northern_hold", "bidirectional": true, "moveCost": 2, "terrain": "mountain", "passable": true, "width": 1 },
+    { "id": "e09", "from": "crossroads", "to": "shadow_outpost", "bidirectional": true, "moveCost": 1, "terrain": "forest", "passable": true, "width": 1 },
+    { "id": "e10", "from": "shadow_citadel", "to": "dark_fortress", "bidirectional": true, "moveCost": 1, "terrain": "desert", "passable": true, "width": 2 },
+    { "id": "e11", "from": "shadow_citadel", "to": "shadow_port", "bidirectional": true, "moveCost": 1, "terrain": "coastal", "passable": true, "width": 2 },
+    { "id": "e12", "from": "shadow_citadel", "to": "shadow_outpost", "bidirectional": true, "moveCost": 1, "terrain": "forest", "passable": true, "width": 1 },
+    { "id": "e13", "from": "dark_fortress", "to": "shadow_outpost", "bidirectional": true, "moveCost": 1, "terrain": "swamp", "passable": true, "width": 1 },
+    { "id": "e14", "from": "northern_hold", "to": "frozen_village", "bidirectional": true, "moveCost": 1, "terrain": "snow", "passable": true, "width": 1 },
+    { "id": "e15", "from": "northern_hold", "to": "highland_camp", "bidirectional": true, "moveCost": 1, "terrain": "mountain", "passable": true, "width": 1 },
+    { "id": "e16", "from": "frozen_village", "to": "highland_camp", "bidirectional": true, "moveCost": 1, "terrain": "snow", "passable": true, "width": 1 }
+  ],
+  "fieldBattleTemplates": {
+    "plains": "battle_field_plains",
+    "forest": "battle_field_forest",
+    "mountain": "battle_field_mountain"
+  }
+}

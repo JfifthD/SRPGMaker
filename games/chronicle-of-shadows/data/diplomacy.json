@@ -1,0 +1,16 @@
+{
+  "relations": {
+    "aldora": {
+      "shadow_legion": { "status": "war", "favorability": -80, "treatyTurnsLeft": 0 },
+      "northern_clans": { "status": "neutral", "favorability": 10, "treatyTurnsLeft": 0 }
+    },
+    "shadow_legion": {
+      "aldora": { "status": "war", "favorability": -80, "treatyTurnsLeft": 0 },
+      "northern_clans": { "status": "hostile", "favorability": -30, "treatyTurnsLeft": 0 }
+    },
+    "northern_clans": {
+      "aldora": { "status": "neutral", "favorability": 10, "treatyTurnsLeft": 0 },
+      "shadow_legion": { "status": "hostile", "favorability": -30, "treatyTurnsLeft": 0 }
+    }
+  }
+}

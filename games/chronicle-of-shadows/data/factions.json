@@ -1,0 +1,49 @@
+{
+  "factions": [
+    {
+      "id": "aldora",
+      "name": "Kingdom of Aldora",
+      "color": 13215820,
+      "leader": "gen_kael",
+      "capital": "capital_aldora",
+      "aiProfile": { "preset": "steady_expander" },
+      "isPlayer": true,
+      "startTerritories": ["capital_aldora", "fort_north", "village_east", "port_haven"],
+      "startGenerals": ["gen_kael", "gen_lyra", "gen_serra"],
+      "startResources": { "gold": 5000, "food": 3000, "troops": 10000 }
+    },
+    {
+      "id": "shadow_legion",
+      "name": "Shadow Legion",
+      "color": 5263440,
+      "leader": "gen_shadow_lord",
+      "capital": "shadow_citadel",
+      "aiProfile": { "preset": "blitz_conqueror", "overrides": { "diplomacy": 3 } },
+      "startTerritories": ["shadow_citadel", "dark_fortress", "shadow_outpost", "shadow_port"],
+      "startGenerals": ["gen_shadow_lord", "gen_dark_knight", "gen_necro", "gen_assassin"],
+      "startResources": { "gold": 6000, "food": 2500, "troops": 12000 }
+    },
+    {
+      "id": "northern_clans",
+      "name": "Northern Clans",
+      "color": 4500223,
+      "leader": "gen_frost_chief",
+      "capital": "northern_hold",
+      "aiProfile": { "preset": "fortress_guardian" },
+      "startTerritories": ["northern_hold", "frozen_village", "highland_camp"],
+      "startGenerals": ["gen_frost_chief", "gen_ranger"],
+      "startResources": { "gold": 3000, "food": 4000, "troops": 8000 }
+    }
+  ],
+  "generals": [
+    { "id": "gen_kael", "name": "Kael", "unitDataId": "warrior", "leadership": 12, "intellect": 6, "politics": 5, "charm": 8 },
+    { "id": "gen_lyra", "name": "Lyra", "unitDataId": "archer", "leadership": 8, "intellect": 9, "politics": 4, "charm": 7 },
+    { "id": "gen_serra", "name": "Serra", "unitDataId": "healer", "leadership": 6, "intellect": 8, "politics": 7, "charm": 9 },
+    { "id": "gen_shadow_lord", "name": "Malachar", "unitDataId": "dark_lord", "leadership": 15, "intellect": 8, "politics": 3, "charm": 4 },
+    { "id": "gen_dark_knight", "name": "Vorn", "unitDataId": "knight_dark", "leadership": 10, "intellect": 5, "politics": 2, "charm": 3 },
+    { "id": "gen_necro", "name": "Nyx", "unitDataId": "necromancer", "leadership": 7, "intellect": 10, "politics": 4, "charm": 2 },
+    { "id": "gen_assassin", "name": "Shade", "unitDataId": "assassin", "leadership": 5, "intellect": 7, "politics": 1, "charm": 5 },
+    { "id": "gen_frost_chief", "name": "Bjorn", "unitDataId": "berserker", "leadership": 11, "intellect": 4, "politics": 6, "charm": 7 },
+    { "id": "gen_ranger", "name": "Eira", "unitDataId": "ranger", "leadership": 7, "intellect": 8, "politics": 3, "charm": 6 }
+  ]
+}

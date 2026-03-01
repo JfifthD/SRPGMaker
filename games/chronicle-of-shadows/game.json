@@ -8,7 +8,11 @@
     "units": "data/units.json",
     "skills": "data/skills.json",
     "terrains": "data/terrains.json",
-    "mapsDir": "data/maps/"
+    "mapsDir": "data/maps/",
+    "audio": "data/audio.json",
+    "world": "data/world.json",
+    "factions": "data/factions.json",
+    "diplomacy": "data/diplomacy.json"
   },
   "assets": {
     "imagesDir": "assets/images/",

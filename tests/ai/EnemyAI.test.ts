@@ -25,6 +25,11 @@ const stubGameProject: GameProject = {
   terrainMap: Object.fromEntries((terrainsJson as unknown as TerrainData[]).map(t => [t.key, t])),
   equipmentMap: {},
   jobsMap: {},
+  audioConfig: null,
+  worldMap: null,
+  factionsData: null,
+  generalsData: null,
+  diplomacyData: null,
 };
 
 // Import after mock is in place

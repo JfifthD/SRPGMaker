@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { PhaserRenderer } from '@/engine/renderer/PhaserRenderer';
 import { PhaserDialogueRenderer } from '@/engine/renderer/PhaserDialogueRenderer';
+import { PhaserAudioManager } from '@/engine/renderer/PhaserAudioManager';
+import { AudioCoordinator } from '@/engine/coordinator/AudioCoordinator';
 import { BattleCoordinator } from '@/engine/coordinator/BattleCoordinator';
 import { InputHandler } from '@/engine/input/InputHandler';
 import { store } from '@/engine/state/GameStore';
@@ -9,6 +11,7 @@ import { RingMenu } from '@/ui/RingMenu';
 import { DialogueManager } from '@/engine/systems/dialogue/DialogueManager';
 import { DialogueTriggerSystem } from '@/engine/systems/dialogue/DialogueTriggerSystem';
 import type { DialogueScript } from '@/engine/data/types/Dialogue';
+import type { BattleContext } from '@/engine/strategic/state/WorldState';
 import '@/engine/systems/combat/ReactionSystem'; // Initialize the passive event listener
 
 export class BattleScene extends Phaser.Scene {
@@ -16,6 +19,7 @@ export class BattleScene extends Phaser.Scene {
   private coordinator!: BattleCoordinator;
   private inputHandler!: InputHandler;
   private ringMenu!: RingMenu;
+  private audioCoord!: AudioCoordinator;
 
   // ── Dialogue subsystem (battle_overlay mode) ─────────────
   private dlgRenderer!: PhaserDialogueRenderer;
@@ -23,13 +27,16 @@ export class BattleScene extends Phaser.Scene {
   private dlgTriggers!: DialogueTriggerSystem;
 
   private stageId!: string;
+  /** Strategic battle context — set when launched from WorldMapScene. */
+  private worldBattle: BattleContext | null = null;
 
   constructor() {
     super({ key: 'BattleScene' });
   }
 
-  init(data: { stageId?: string }): void {
+  init(data: { stageId?: string; worldBattle?: BattleContext }): void {
     this.stageId = data.stageId || 'stage_01';
+    this.worldBattle = data.worldBattle ?? null;
   }
 
   create(): void {
@@ -44,6 +51,12 @@ export class BattleScene extends Phaser.Scene {
     this.gameRenderer = new PhaserRenderer(this);
     this.coordinator  = new BattleCoordinator(this.gameRenderer);
     this.inputHandler = new InputHandler(this, this.coordinator);
+
+    // ── Audio: create coordinator + play battle BGM ──
+    const audioMgr = new PhaserAudioManager(this);
+    this.audioCoord = new AudioCoordinator(audioMgr, gameProject.audioConfig);
+    const battleBgm = mapData.bgmId ?? gameProject.audioConfig?.bgmFlow?.battle;
+    this.audioCoord.playBGM(battleBgm);
 
     this.gameRenderer.renderMap(store.getState());
     this.gameRenderer.syncUnits(store.getState());
@@ -111,5 +124,6 @@ export class BattleScene extends Phaser.Scene {
     this.inputHandler.destroy();
     this.gameRenderer.destroy();
     this.dlgRenderer?.destroy();
+    this.audioCoord?.destroy();
   }
 }

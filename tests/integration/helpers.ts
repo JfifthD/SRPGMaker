@@ -109,6 +109,11 @@ export function makeTestProject(units: UnitData[]): GameProject {
     terrainMap: TEST_TERRAIN_MAP,
     equipmentMap: {},
     jobsMap: {},
+    audioConfig: null,
+    worldMap: null,
+    factionsData: null,
+    generalsData: null,
+    diplomacyData: null,
   };
 }
 
