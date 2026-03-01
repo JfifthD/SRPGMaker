@@ -1,62 +1,143 @@
-# Audio Framework & Metadata DB (API Spec)
+# Audio Framework (Engine Spec 07) — ✅ Implemented
 
-SRPG Maker 엔진 내에서 사운드트랙(BGM)과 효과음(SFX)을 통합 관리하고, 특정 렌더링 프레임워크나 시각적 씬(Scene)에 종속되지 않은 채로 소리를 제어하는 아키텍처 명세입니다.
+Data-driven audio system for SRPGMaker. Game creators configure all audio via `audio.json` — no code changes needed.
 
-## 1. IAudioManager 플러그인 인터페이스
+---
 
-엔진의 로직 파트(GameStore, 전투 코디네이터, AI)는 현재 재생 환경이 브라우저인지 기본 OS인지 알 수 없으므로 오직 아래의 표준화된 인터페이스를 통해서만 소리 재생을 퍼블리시합니다.
+## 1. Architecture Overview
+
+```
+audio.json (data)  ──→  AudioConfig types  ──→  AudioCoordinator (logic)
+                                                      │
+                                                      ├─→ EventBus (subscribe)
+                                                      └─→ IAudioManager (interface)
+                                                              │
+                                              ┌───────────────┼───────────────┐
+                                     PhaserAudioManager   NullAudioManager
+                                        (runtime)          (headless test)
+```
+
+## 2. IAudioManager Interface
+
+`src/engine/renderer/IAudioManager.ts`
 
 ```typescript
 interface IAudioManager {
-  // Asset ID 기반으로 오디오를 스트리밍/재생
-  playBGM(assetId: string, options?: { loop?: boolean; fadeMs?: number }): void;
+  playBGM(assetId: string, options?: { loop?: boolean; fadeMs?: number; volume?: number }): void;
   stopBGM(fadeMs?: number): void;
-
-  // 3D/2.5D 공간 정보를 포함한 효과음 재생
-  playSFX(
-    assetId: string,
-    options?: {
-      volume?: number;
-      pan?: number;
-      worldX?: number;
-      worldY?: number;
-    },
-  ): void;
-
+  playSFX(assetId: string, options?: { volume?: number }): void;
   setMasterVolume(vol: number): void;
-  duckBGM(targetVol: number, durationMs: number): void; // 대화 중 임시로 볼륨 낮춤
+  duckBGM(targetVol: number, durationMs: number): void;
+  unduckBGM(durationMs: number): void;
+  getCurrentBGM(): string | null;
+  destroy(): void;
 }
 ```
 
-## 2. Audio Asset Schema (Data-Driven DB)
+Implementations:
+- **PhaserAudioManager** (`src/engine/renderer/PhaserAudioManager.ts`) — Phaser `scene.sound` wrapper with crossfade, ducking via tweens.
+- **NullAudioManager** (`src/engine/renderer/NullAudioManager.ts`) — No-op stub for headless tests.
 
-하드코딩된 변수명 대신, 게임 내의 모든 소리는 JSON 기반의 Metadata DB로 로드됩니다. AI(MCP)가 신규 맵을 만들 때 BGM을 지정하려면 오직 `Asset ID` 스키마만 참조하면 됩니다.
+## 3. Audio Data Types
+
+`src/engine/data/types/Audio.ts`
+
+| Type | Description |
+|------|-------------|
+| `AudioEntry` | Single audio asset: `{ id, category, file, defaultVolume?, loop?, tags? }` |
+| `AudioEventMap` | Maps EventBus events to SFX asset IDs |
+| `BGMFlowMap` | Scene-level BGM assignments: `{ title?, battle?, victory?, defeat?, camp? }` |
+| `AudioConfig` | Top-level schema: `{ entries, eventMap, bgmFlow }` |
+
+## 4. audio.json Schema (Game Creator Config)
+
+`games/<game-id>/data/audio.json`
 
 ```json
 {
-  "asset_id": "bgm_battle_boss_01",
-  "category": "BGM",
-  "source_url": "assets/audio/bgm_boss_01.mp3",
-  "tags": ["tense", "epic"],
-  "default_volume": 0.8,
-  "loop_points": { "start_sec": 12.5, "end_sec": 145.2 }
+  "entries": {
+    "bgm_battle_01": { "id": "bgm_battle_01", "category": "bgm", "file": "bgm/battle_01.mp3", "defaultVolume": 0.8, "loop": true },
+    "sfx_hit_phys":  { "id": "sfx_hit_phys",  "category": "sfx", "file": "sfx/hit_phys.mp3",  "defaultVolume": 0.7 }
+  },
+  "eventMap": {
+    "onUnitDamaged": "sfx_hit_phys",
+    "onCriticalHit": "sfx_crit",
+    "onUnitHealed":  "sfx_heal"
+  },
+  "bgmFlow": {
+    "title":   "bgm_title",
+    "battle":  "bgm_battle_01",
+    "victory": "bgm_victory",
+    "defeat":  "bgm_defeat"
+  }
 }
 ```
 
-## 3. Event-Driven Audio Triggers
+### EventMap Keys
 
-엔진 내부 로직에서 `playSFX()`를 직접 호출하는 것은 금지됩니다(결합도 상승 방지).
-대신 `GameStore`에서 발생하는 도메인 이벤트(`EventBus`)를 `AudioCoordinator`가 구독(Listen)하여 알맞은 사운드 에셋을 재생합니다.
+| Key | Trigger Event |
+|-----|---------------|
+| `onUnitMoved` | Unit movement completed |
+| `onUnitDamaged` | Non-critical damage |
+| `onCriticalHit` | Critical hit |
+| `onUnitHealed` | HP restored |
+| `onUnitDefeated` | Unit HP reaches 0 |
+| `onBuffApplied` | Stat buff applied |
+| `onDebuffApplied` | Stat debuff applied |
+| `onSkillCast` | Skill activation |
+| `onTurnStart` | Player phase start |
+| `onEnemyPhase` | Enemy phase start |
+| `onVictory` | Stage cleared |
+| `onDefeat` | Party wiped |
+| `onMenuOpen` | Ring menu opened |
 
-### 3-1. 시스템 내장 트리거 (Built-in Audio Hooks)
+## 5. AudioCoordinator
 
-메이커에서 RuleSet을 통해 아래 이벤트와 Asset ID를 매핑(Mapping)할 수 있습니다.
+`src/engine/coordinator/AudioCoordinator.ts`
 
-- `OnTurnStart`: 턴 개시 시 재생 (예: `sfx_turn_start`)
-- `OnUnitDamaged`: 무기 타입과 피격 대상의 아머 타입에 따라 매핑된 소리 (예: 검 vs 판금 -> `sfx_hit_armor`)
-- `OnCriticalHit`: 크리티컬 전용 타격음 (예: `sfx_crit_strike`)
-- `OnVictory` / `OnDefeat`: 승패 결정 시 BGM 강제 전환
+- Subscribes to EventBus events → routes to IAudioManager via AudioConfig eventMap.
+- No Phaser imports — follows BattleCoordinator pattern.
+- Per-scene lifecycle: created in scene `create()`, destroyed on `shutdown`.
+- Handles dialogue ducking: `dialogueStart` → duckBGM, `dialogueEnd` → unduckBGM.
+- Pass-through for dialogue events: `sfxPlay` and `bgmChange` from DialogueManager.
 
-### 3-2. Spatial Audio (공간 음향 연출)
+## 6. Per-Map BGM Override
 
-- `playSFX` 호출 시 페이로드에 `worldX, worldY`를 담아 보내면, 구현체(Phaser Sound 등)가 현재 카메라의 중심 좌표를 계산하여 거리에 따른 Volume 감쇠와 좌우 Pan 값을 자동 믹싱하는 옵션을 지원합니다.
+`MapData.bgmId?: string` — set in a map's JSON to override the default battle BGM.
+
+```json
+{ "id": "stage_boss", "bgmId": "bgm_battle_boss_01", ... }
+```
+
+BattleScene resolves: `mapData.bgmId ?? audioConfig.bgmFlow.battle`.
+
+## 7. Scene Integration
+
+| Scene | Audio Behavior |
+|-------|---------------|
+| **BootScene** | Preloads all audio entries from `audio.json` |
+| **TitleScene** | Plays `bgmFlow.title` |
+| **BattleScene** | Creates AudioCoordinator, plays `mapData.bgmId ?? bgmFlow.battle` |
+| **ResultScene** | Plays `bgmFlow.victory` or `bgmFlow.defeat` |
+
+## 8. VFXManager Decoupling
+
+VFXManager no longer calls `this.scene.sound.play()` directly. Instead emits `EventBus.emit('sfxPlay', { key })` which AudioCoordinator picks up.
+
+## 9. File Paths
+
+| File | Role |
+|------|------|
+| `src/engine/data/types/Audio.ts` | Type definitions |
+| `src/engine/renderer/IAudioManager.ts` | Interface |
+| `src/engine/renderer/NullAudioManager.ts` | Headless stub |
+| `src/engine/renderer/PhaserAudioManager.ts` | Phaser implementation |
+| `src/engine/coordinator/AudioCoordinator.ts` | Event→audio routing |
+| `games/chronicle-of-shadows/data/audio.json` | Sample game audio config |
+| `tests/audio/AudioCoordinator.test.ts` | 23 tests |
+
+## 10. Future (Not Yet Implemented)
+
+- **Spatial Audio**: distance-based volume attenuation + pan from camera center.
+- **Loop Points**: BGM loop start/end offsets for seamless looping.
+- **Audio Pools**: Pre-allocated SFX instances for rapid repeated sounds.

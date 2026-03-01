@@ -1,0 +1,49 @@
+{
+  "entries": {
+    "bgm_title":          { "id": "bgm_title",          "category": "bgm", "file": "bgm/title.mp3",          "defaultVolume": 0.7, "loop": true },
+    "bgm_battle_01":      { "id": "bgm_battle_01",      "category": "bgm", "file": "bgm/battle_01.mp3",      "defaultVolume": 0.8, "loop": true },
+    "bgm_battle_boss_01": { "id": "bgm_battle_boss_01", "category": "bgm", "file": "bgm/battle_boss_01.mp3", "defaultVolume": 0.8, "loop": true, "tags": ["tense", "epic"] },
+    "bgm_victory":        { "id": "bgm_victory",        "category": "bgm", "file": "bgm/victory.mp3",        "defaultVolume": 0.8, "loop": false },
+    "bgm_defeat":         { "id": "bgm_defeat",         "category": "bgm", "file": "bgm/defeat.mp3",         "defaultVolume": 0.7, "loop": false },
+    "bgm_camp":           { "id": "bgm_camp",           "category": "bgm", "file": "bgm/camp.mp3",           "defaultVolume": 0.6, "loop": true },
+
+    "sfx_step":           { "id": "sfx_step",           "category": "sfx", "file": "sfx/step.mp3",           "defaultVolume": 0.4 },
+    "sfx_hit_phys":       { "id": "sfx_hit_phys",       "category": "sfx", "file": "sfx/hit_phys.mp3",       "defaultVolume": 0.7 },
+    "sfx_hit_magic":      { "id": "sfx_hit_magic",      "category": "sfx", "file": "sfx/hit_magic.mp3",      "defaultVolume": 0.7 },
+    "sfx_crit":           { "id": "sfx_crit",           "category": "sfx", "file": "sfx/crit.mp3",           "defaultVolume": 0.9 },
+    "sfx_heal":           { "id": "sfx_heal",           "category": "sfx", "file": "sfx/heal.mp3",           "defaultVolume": 0.6 },
+    "sfx_unit_defeat":    { "id": "sfx_unit_defeat",    "category": "sfx", "file": "sfx/unit_defeat.mp3",    "defaultVolume": 0.7 },
+    "sfx_buff":           { "id": "sfx_buff",           "category": "sfx", "file": "sfx/buff.mp3",           "defaultVolume": 0.5 },
+    "sfx_debuff":         { "id": "sfx_debuff",         "category": "sfx", "file": "sfx/debuff.mp3",         "defaultVolume": 0.5 },
+    "sfx_skill_cast":     { "id": "sfx_skill_cast",     "category": "sfx", "file": "sfx/skill_cast.mp3",     "defaultVolume": 0.6 },
+    "sfx_turn_start":     { "id": "sfx_turn_start",     "category": "sfx", "file": "sfx/turn_start.mp3",     "defaultVolume": 0.4 },
+    "sfx_enemy_phase":    { "id": "sfx_enemy_phase",    "category": "sfx", "file": "sfx/enemy_phase.mp3",    "defaultVolume": 0.5 },
+    "sfx_victory_jingle": { "id": "sfx_victory_jingle", "category": "sfx", "file": "sfx/victory_jingle.mp3", "defaultVolume": 0.8 },
+    "sfx_defeat_jingle":  { "id": "sfx_defeat_jingle",  "category": "sfx", "file": "sfx/defeat_jingle.mp3",  "defaultVolume": 0.7 },
+    "sfx_menu_open":      { "id": "sfx_menu_open",      "category": "sfx", "file": "sfx/menu_open.mp3",      "defaultVolume": 0.3 },
+    "sfx_menu_select":    { "id": "sfx_menu_select",    "category": "sfx", "file": "sfx/menu_select.mp3",    "defaultVolume": 0.3 },
+    "sfx_cursor_move":    { "id": "sfx_cursor_move",    "category": "sfx", "file": "sfx/cursor_move.mp3",    "defaultVolume": 0.2 }
+  },
+  "eventMap": {
+    "onUnitMoved":    "sfx_step",
+    "onUnitDamaged":  "sfx_hit_phys",
+    "onCriticalHit":  "sfx_crit",
+    "onUnitHealed":   "sfx_heal",
+    "onUnitDefeated": "sfx_unit_defeat",
+    "onBuffApplied":  "sfx_buff",
+    "onDebuffApplied":"sfx_debuff",
+    "onSkillCast":    "sfx_skill_cast",
+    "onTurnStart":    "sfx_turn_start",
+    "onEnemyPhase":   "sfx_enemy_phase",
+    "onVictory":      "sfx_victory_jingle",
+    "onDefeat":       "sfx_defeat_jingle",
+    "onMenuOpen":     "sfx_menu_open"
+  },
+  "bgmFlow": {
+    "title":   "bgm_title",
+    "battle":  "bgm_battle_01",
+    "victory": "bgm_victory",
+    "defeat":  "bgm_defeat",
+    "camp":    "bgm_camp"
+  }
+}
